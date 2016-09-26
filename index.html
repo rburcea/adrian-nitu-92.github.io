@@ -1,18 +1,42 @@
 <head>
-<script src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
+<script src="https://code.jquery.com/jquery-1.7.1.min.js"></script>
 <script src="https://api.trello.com/1/client.js?key=83fbbffdca68e9e5655f409d9b204618"></script>
 <!--  python -m http.server -->
 </head>
 <body>
 <script>
+
+boards=undefined;
+
+var boardSelectqqq = function(board){
+	for( i in boards){
+		if(boards[i].name === board){
+			console.log(boards[i]);
+			var success = function(successMsg) {
+				console.log(successMsg);
+			  document.getElementById("p1").innerHTML = "listeee";
+			};
+
+			var error = function(errorMsg) {
+			  console.log(errorMsg);
+			};
+
+			Trello.get('/boards/'+ boards[i].id +'/lists', success, error);
+					}
+		}
+	}
+
 var authenticationSuccess = function() { 
 	console.log("Successful authentication");
 	var success = function(successMsg) {
-		console.log(successMsg);
+
+		boards=successMsg;
 		document.getElementById("p1").innerHTML = "";
-		for( i in successMsg){
-			item = successMsg[i];
-			document.getElementById("p1").innerHTML = document.getElementById("p1").innerHTML + item.name + "<br/>";
+		for( i in boards){
+			item = boards[i];
+			document.getElementById("p1").innerHTML = document.getElementById("p1").innerHTML +
+			"<button onclick=\"boardSelectqqq('"+item.name+"')\">" + 
+			item.name + "</button><br/>";
 		}
 	};
 
