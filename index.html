@@ -1,18 +1,40 @@
+<head>
 <script src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
 <script src="https://api.trello.com/1/client.js?key=83fbbffdca68e9e5655f409d9b204618"></script>
-
-Hello World
-
-
-
-
+<!--  python -m http.server -->
+</head>
+<body>
 <script>
+var authenticationSuccess = function() { 
+	console.log("Successful authentication");
+	var success = function(successMsg) {
+		console.log(successMsg);
+		document.getElementById("p1").innerHTML = "";
+		for( i in successMsg){
+			item = successMsg[i];
+			document.getElementById("p1").innerHTML = document.getElementById("p1").innerHTML + item.name + "<br/>";
+		}
+	};
+
+	var error = function(errorMsg) {
+		console.log(errorMsg);
+	};
+
+	Trello.get('/member/me/boards', success, error)
+};
+var authenticationFailure = function() { alert("Failed authentication"); };
+
 Trello.authorize({
   type: 'popup',
   name: 'Getting Started Application',
   scope: {
     read: 'true',
     write: 'true' },
-  expiration: 'never'
+  expiration: 'never',
+  success: authenticationSuccess,
+  error: authenticationFailure
 });
 </script>
+<p id="p1">Hello World!</p>
+</body>
+
