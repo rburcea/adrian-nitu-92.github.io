@@ -1,41 +1,65 @@
 <head>
+  <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+  <link rel="stylesheet" href="/resources/demos/style.css">
 <script src="https://code.jquery.com/jquery-1.7.1.min.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
 <script src="https://api.trello.com/1/client.js?key=83fbbffdca68e9e5655f409d9b204618"></script>
 <!--  python -m http.server -->
+<script>
+  $( function() {
+    $( "#accordion" ).accordion();
+  } );
+  </script>
 </head>
 <body>
 <script>
 
-boards=undefined;
-
-var boardSelectqqq = function(board){
-	for( i in boards){
-		if(boards[i].name === board){
-			console.log(boards[i]);
-			var success = function(successMsg) {
-				console.log(successMsg);
-			  document.getElementById("p1").innerHTML = "listeee";
-			};
-
-			var error = function(errorMsg) {
-			  console.log(errorMsg);
-			};
-
-			Trello.get('/boards/'+ boards[i].id +'/lists', success, error);
-					}
+var populateList = function(listID){
+	var success = function(successMsg) {
+		cards = successMsg;
+		document.getElementById(listID).innerHTML = "";
+		for( i in cards){
+			item = cards[i];
+			document.getElementById(listID).innerHTML = document.getElementById(listID).innerHTML +
+			"<button onclick=\"listSelect('"+item.name+"')\">" + 
+			item.name + "</button><br/>";
 		}
-	}
+	};
+
+	var error = function(errorMsg) {
+	  console.log(errorMsg);
+	};
+
+	Trello.get('/lists/'+ listID +'/cards', success, error);
+}
+
+var boardSelect = function(boardID){
+	var success = function(lists) {
+		document.getElementById("p1").innerHTML = "<div id=\"accordion\">";
+		for( i in lists){
+			item = lists[i];
+			document.getElementById("p1").innerHTML = document.getElementById("p1").innerHTML + "<h3>" + item.name + "</h3\n><div id=\""
+				+item.id+"\">" + "</div>";
+			populateList(item.id);
+		}
+		document.getElementById("p1").innerHTML = document.getElementById("p1").innerHTML + "</div>";
+	};
+
+	var error = function(errorMsg) {
+	  console.log(errorMsg);
+	};
+
+	Trello.get('/boards/'+ boardID +'/lists', success, error);
+}
 
 var authenticationSuccess = function() { 
 	console.log("Successful authentication");
-	var success = function(successMsg) {
-
-		boards=successMsg;
+	var success = function(boards) {
 		document.getElementById("p1").innerHTML = "";
 		for( i in boards){
 			item = boards[i];
 			document.getElementById("p1").innerHTML = document.getElementById("p1").innerHTML +
-			"<button onclick=\"boardSelectqqq('"+item.name+"')\">" + 
+			"<button onclick=\"boardSelect('"+item.id+"')\">" + 
 			item.name + "</button><br/>";
 		}
 	};
