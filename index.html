@@ -1,29 +1,41 @@
 <head>
-  <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
-  <link rel="stylesheet" href="/resources/demos/style.css">
+<link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
 <script src="https://code.jquery.com/jquery-1.7.1.min.js"></script>
 <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
 <script src="https://api.trello.com/1/client.js?key=83fbbffdca68e9e5655f409d9b204618"></script>
 <!--  python -m http.server -->
-<script>
-  $( function() {
-    $( "#accordion" ).accordion();
-  } );
-  </script>
 </head>
 <body>
 <script>
 
+lists=undefined;
+counter = 0;
+
+requiredLists = ["Done", "Today", "Inbox"]
+requiredWorkList = ["Today", "Inbox"]
+
+var done = function(){
+	counter = counter + 1;
+	if(counter >= Object.keys(lists).length ){
+		console.log("check we have Done and Today");
+		console.log("check Today has associated time, transform to pomodoro ticks");
+		console.log("check and add tags for time");
+		console.log("check today is sane @time");
+		console.log("check today for date. want everything that is in today to be moved to today, or to be moved to inbox?");
+		console.log("estimate success of today ending. Stop if under 30%");
+		console.log("Check today. Check number of items with a warning if they exceed 6. Error out if they exceed 10. Check dates of items. Error out and offer fix with place or fix with move if they're not for today. Compute time left and estimate success. Error out If under 30%");
+	}
+}
+
 var populateList = function(listID){
-	var success = function(successMsg) {
-		cards = successMsg;
-		document.getElementById(listID).innerHTML = "";
-		for( i in cards){
-			item = cards[i];
-			document.getElementById(listID).innerHTML = document.getElementById(listID).innerHTML +
-			"<button onclick=\"listSelect('"+item.name+"')\">" + 
-			item.name + "</button><br/>";
+	var success = function(answer) {
+		cards = {};
+		for(i in answer){
+			card = answer[i];
+			cards[card.id] = card;
 		}
+		lists[listID].cards = cards;
+		done();
 	};
 
 	var error = function(errorMsg) {
@@ -34,15 +46,16 @@ var populateList = function(listID){
 }
 
 var boardSelect = function(boardID){
-	var success = function(lists) {
-		document.getElementById("p1").innerHTML = "<div id=\"accordion\">";
-		for( i in lists){
-			item = lists[i];
-			document.getElementById("p1").innerHTML = document.getElementById("p1").innerHTML + "<h3>" + item.name + "</h3\n><div id=\""
-				+item.id+"\">" + "</div>";
-			populateList(item.id);
+	var success = function(answer) {
+		document.getElementById("p1").innerHTML = "";
+		lists = {};
+		for(i in answer){
+			list = answer[i];
+			lists[list.id] = list;
 		}
-		document.getElementById("p1").innerHTML = document.getElementById("p1").innerHTML + "</div>";
+		for(i in lists){
+			populateList(i);
+		}
 	};
 
 	var error = function(errorMsg) {
