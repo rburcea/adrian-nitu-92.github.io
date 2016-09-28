@@ -8,26 +8,103 @@
 <body>
 <script>
 
-lists=undefined;
-counter = 0;
+counter = 0; // TODO: no global state please
+Object.values = obj => Object.keys(obj).map(key => obj[key]);
 
-requiredLists = ["Done", "Today", "Inbox"]
-requiredWorkList = ["Today", "Inbox"]
+var extractTags = function(string){
+	ret = string.split("--");
+	ret = ret.map(function(s){return s.trim();});
+	return ret;
+};
 
-var done = function(){
+globalWarning = "";
+globalError = "";
+asserts = {};
+asserts["Check Done and Today"] = function(lists){
+	requiredLists = ["Done", "Today", "Inbox"]
+	requiredWorkList = ["Today", "Inbox"]
+	console.log("check we have Done and Today");
+	listNames = Object.values(lists).map(function(i){return i.name;});
+	listTags = listNames.map(function(i){return extractTags(i);});
+	for( r in requiredLists ){
+		rl = requiredLists[r];
+		var found = false;
+		for( l in listTags ){
+			lt = listTags[l];
+			if(lt.indexOf(rl) >= 0){
+				found = true;
+				break;
+			}
+		}
+		if(! found){
+			globalError = "List \"" + rl + "\" must exist! I'm not smart enough to create that for you yet :(<br/>"
+			return false;
+		}
+	}
+	for( r in requiredWorkList ){
+		rl = requiredWorkList[r];
+		var found = false;
+		for( l in listTags ){
+			lt = listTags[l];
+			if(lt.indexOf(rl) >= 0 && lt.indexOf("Work") >= 0){
+				found = true;
+				break;
+			}
+		}
+		if(! found){
+			globalError = "List \"" + rl + " -- Work\" must exist! I'm not smart enough to create that for you yet :(<br/>"
+			return false;
+		}
+	}
+	console.log("passed!");
+	return true;
+}
+asserts["check Today has associated time, transform to pomodoro ticks"] = function(){
+	console.log("check Today has associated time, transform to pomodoro ticks");
+	listNames = Object.values(lists).map(function(i){return i.name;});
+	listTags = listNames.map(function(i){return extractTags(i);});
+	console.log("passed!");
+	return true;
+}
+asserts["check and add tags for time"] = function(){
+	console.log("check and add tags for time");
+	return true;
+}
+asserts["check today is sane @time"] = function(){
+	console.log("check today is sane @time");
+	return true;
+}
+asserts["check today for date. want everything that is in today to be moved to today, or to be moved to inbox?"] = function(){
+	console.log("check today for date. want everything that is in today to be moved to today, or to be moved to inbox?");
+	return true;
+}
+asserts["estimate success of today ending. Stop if under 30%"] = function(){
+	console.log("estimate success of today ending. Stop if under 30%");
+	return true;
+}
+asserts["Check today. Check number of items with a warning if they exceed 6. Error out if they exceed 10. Check dates of items. Error out and offer fix with place or fix with move if they're not for today. Compute time left and estimate success. Error out If under 30%"] = function(){
+	console.log("Check today. Check number of items with a warning if they exceed 6. Error out if they exceed 10. Check dates of items. Error out and offer fix with place or fix with move if they're not for today. Compute time left and estimate success. Error out If under 30%");
+	return true;
+}
+
+var done = function(lists){
+	document.getElementById("p1").innerHTML = "";
 	counter = counter + 1;
 	if(counter >= Object.keys(lists).length ){
-		console.log("check we have Done and Today");
-		console.log("check Today has associated time, transform to pomodoro ticks");
-		console.log("check and add tags for time");
-		console.log("check today is sane @time");
-		console.log("check today for date. want everything that is in today to be moved to today, or to be moved to inbox?");
-		console.log("estimate success of today ending. Stop if under 30%");
-		console.log("Check today. Check number of items with a warning if they exceed 6. Error out if they exceed 10. Check dates of items. Error out and offer fix with place or fix with move if they're not for today. Compute time left and estimate success. Error out If under 30%");
+		for(a in asserts){
+			assert = asserts[a];
+			if(! assert(lists)){
+				document.getElementById("p1").innerHTML = globalError;
+				return;
+			} else {
+				document.getElementById("p1").innerHTML = document.getElementById("p1").innerHTML + globalWarning;
+				globalWarning = "";
+			}
+		}
 	}
 }
 
-var populateList = function(listID){
+var populateLists = function(lists){
 	var success = function(answer) {
 		cards = {};
 		for(i in answer){
@@ -35,27 +112,27 @@ var populateList = function(listID){
 			cards[card.id] = card;
 		}
 		lists[listID].cards = cards;
-		done();
+		done(lists);
 	};
 
 	var error = function(errorMsg) {
 	  console.log(errorMsg);
 	};
 
-	Trello.get('/lists/'+ listID +'/cards', success, error);
+	for(listID in lists){
+		Trello.get('/lists/'+ listID +'/cards', success, error);
+	}
 }
 
 var boardSelect = function(boardID){
 	var success = function(answer) {
 		document.getElementById("p1").innerHTML = "";
-		lists = {};
+		var lists = {};
 		for(i in answer){
 			list = answer[i];
 			lists[list.id] = list;
 		}
-		for(i in lists){
-			populateList(i);
-		}
+		populateLists(lists);
 	};
 
 	var error = function(errorMsg) {
