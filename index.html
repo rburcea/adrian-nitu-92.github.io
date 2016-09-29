@@ -9,28 +9,41 @@
 <script>
 
 counter = 0; // TODO: no global state please
+globalWarning = "";
+globalError = "";
+asserts = {};
 Object.values = obj => Object.keys(obj).map(key => obj[key]);
 
-var extractTags = function(string){
+function extractTags(string){
 	ret = string.split("--");
 	ret = ret.map(function(s){return s.trim();});
 	return ret;
 };
 
-globalWarning = "";
-globalError = "";
-asserts = {};
-asserts["Check Done and Today"] = function(lists){
-	requiredLists = ["Done", "Today", "Inbox"]
-	requiredWorkList = ["Today", "Inbox"]
-	console.log("check we have Done and Today");
-	listNames = Object.values(lists).map(function(i){return i.name;});
-	listTags = listNames.map(function(i){return extractTags(i);});
+function swap(obj){
+  var ret = {};
+  for(var key in obj){
+    ret[obj[key].name] = obj[key];
+  }
+  return ret;
+}
+
+function getAnnotedTags(lists){
+	listNames = swap(lists);
+	listTags = {};
+	listTags = Object.keys(listNames).map(function(i){return {tags:extractTags(i),backLink:listNames[i]};});
+	return listTags;
+}
+
+asserts["Check lists with no time req"] = function(lists){
+	console.log("Check lists with no time req");
+	requiredLists = ["Done", "Inbox"]
+	listTags = getAnnotedTags(lists);
 	for( r in requiredLists ){
 		rl = requiredLists[r];
 		var found = false;
 		for( l in listTags ){
-			lt = listTags[l];
+			lt = listTags[l].tags;
 			if(lt.indexOf(rl) >= 0){
 				found = true;
 				break;
@@ -41,49 +54,114 @@ asserts["Check Done and Today"] = function(lists){
 			return false;
 		}
 	}
-	for( r in requiredWorkList ){
-		rl = requiredWorkList[r];
-		var found = false;
-		for( l in listTags ){
-			lt = listTags[l];
-			if(lt.indexOf(rl) >= 0 && lt.indexOf("Work") >= 0){
-				found = true;
-				break;
+	console.log("passed!");
+	return true;
+}
+asserts["Check lists with time req and enrich lists with pomodoro ticks"] = function(lists){
+	// breaking "do one thing" policy
+	console.log("Check lists with no time req and enrich lists with pomodoro ticks");
+	requiredLists = ["Today", "Tomorrow", "Weekend", "Week", "Month Plan", "3 Month Plan"]
+	listTags = getAnnotedTags(lists);
+	for(l in listTags){
+		var found = 0;
+		lt = listTags[l].tags;
+		for(t in lt){
+			tag = lt[t];
+			number = parseFloat(tag);
+			if(number === number && tag == number + "h"){
+				found = found + 1;
+				// convert to pomodoro ticks
+				listTags[l].backLink.ticks = number/0.5;
+			} 
+			if(requiredLists.indexOf(tag) >= 0){
+				found = found + 1;
 			}
 		}
-		if(! found){
-			globalError = "List \"" + rl + " -- Work\" must exist! I'm not smart enough to create that for you yet :(<br/>"
+		if(found == 1){
+			globalError = "Lists must have a tag that says how long they are allowed to stretch!<br/>" + JSON.stringify(lt);
 			return false;
 		}
 	}
 	console.log("passed!");
 	return true;
 }
-asserts["check Today has associated time, transform to pomodoro ticks"] = function(){
-	console.log("check Today has associated time, transform to pomodoro ticks");
-	listNames = Object.values(lists).map(function(i){return i.name;});
-	listTags = listNames.map(function(i){return extractTags(i);});
-	console.log("passed!");
+
+function parseTasks(name, list){
+	if(list == undefined){
+		return true;
+	}
+	cards = list.cards;
+	sumTicks = 0;
+	convert = {"30 minute task" : 1, "Hour task": 2, "2 hour task": 4, "3 hour task":6, "5 hour task":10, "5 minute task" : 0, "8 hour task":16, "13 hour task":26, "Habbit":0};
+	for(c in cards){
+		card = cards[c];
+		labels = card.labels;
+		found = 0;
+		for(i in labels){
+			label = labels[i];
+			console.log(label);
+			tick = convert[label.name];
+			if(tick != undefined){
+				sumTicks = sumTicks + tick;
+				found = found + 1;
+			}
+		}
+		if(found != 1){
+			globalError = "Card " + JSON.stringify(card) + " is not labeled correctly <br/>"
+			return false;
+		}
+	}
+	console.log(sumTicks);
+	console.log(sumTicks / list.ticks);
+	list.load = parseInt(String(100*(sumTicks / list.ticks)));
+	if(list.load > 70){
+		globalWarning = globalWarning + "Seems you are kinda overbooked for " + name + ".<br/>Please reschedule! Drop at least: " + (sumTicks - 0.7*list.ticks)  + "<br/>";
+	}
+	if(list.load > 100){
+		globalError = "Seems you are kinda overbooked for " + name + ".<br/>Please reschedule!<br/>Drop at least: " + (sumTicks - list.ticks) ;
+		return false;
+	}
+	globalWarning = globalWarning + name + "'s success rate = " + (100-list.load) + "%.<br/>";
 	return true;
 }
-asserts["check and add tags for time"] = function(){
-	console.log("check and add tags for time");
-	return true;
-}
-asserts["check today is sane @time"] = function(){
+
+asserts["check today is sane @time"] = function(lists){
 	console.log("check today is sane @time");
-	return true;
+	listTags = getAnnotedTags(lists);
+	today = undefined;
+	tomorrow = undefined;
+	weekend = undefined;
+	week = undefined;
+	for(l in listTags){
+		lt = listTags[l].tags;
+		for(t in lt){
+			tag = lt[t];
+			if(tag === "Today"){
+				today = listTags[l].backLink;
+			}
+			if(tag === "Tomorrow"){
+				tomorrow = listTags[l].backLink;
+			}
+			if(tag === "Weekend"){
+				weekend = listTags[l].backLink;
+			}
+			if(tag === "Week"){
+				week = listTags[l].backLink;
+			}
+		}
+	}
+	return parseTasks("Today", today) && parseTasks("Tomorrow", tomorrow) && parseTasks("Weekend", weekend) && parseTasks("Week", week);
 }
 asserts["check today for date. want everything that is in today to be moved to today, or to be moved to inbox?"] = function(){
 	console.log("check today for date. want everything that is in today to be moved to today, or to be moved to inbox?");
 	return true;
 }
-asserts["estimate success of today ending. Stop if under 30%"] = function(){
+asserts["estimate success of today ending. Stop if under 30%. success is 1-sum(time_tasks)/timetoday"] = function(){
 	console.log("estimate success of today ending. Stop if under 30%");
 	return true;
 }
 asserts["Check today. Check number of items with a warning if they exceed 6. Error out if they exceed 10. Check dates of items. Error out and offer fix with place or fix with move if they're not for today. Compute time left and estimate success. Error out If under 30%"] = function(){
-	console.log("Check today. Check number of items with a warning if they exceed 6. Error out if they exceed 10. Check dates of items. Error out and offer fix with place or fix with move if they're not for today. Compute time left and estimate success. Error out If under 30%");
+	console.log("Check today. Check number of items with a warning if they exceed 6. Error out if they exceed 10. Check dates of items. Error out and offer fix with place or fix with move if they're not for today. Compute time left and estimate success. Error out if under 30%");
 	return true;
 }
 
@@ -105,14 +183,16 @@ var done = function(lists){
 }
 
 var populateLists = function(lists){
-	var success = function(answer) {
-		cards = {};
-		for(i in answer){
-			card = answer[i];
-			cards[card.id] = card;
-		}
-		lists[listID].cards = cards;
-		done(lists);
+	var curry = function(listID){
+		return function(answer) {
+			cards = {};
+			for(i in answer){
+				card = answer[i];
+				cards[card.id] = card;
+			}
+			lists[listID]["cards"] = cards;
+			done(lists);
+		};
 	};
 
 	var error = function(errorMsg) {
@@ -120,12 +200,13 @@ var populateLists = function(lists){
 	};
 
 	for(listID in lists){
-		Trello.get('/lists/'+ listID +'/cards', success, error);
+		Trello.get('/lists/'+ listID +'/cards', curry(listID), error);
 	}
 }
 
 var boardSelect = function(boardID){
 	var success = function(answer) {
+		console.log(answer);
 		document.getElementById("p1").innerHTML = "";
 		var lists = {};
 		for(i in answer){
@@ -145,6 +226,7 @@ var boardSelect = function(boardID){
 var authenticationSuccess = function() { 
 	console.log("Successful authentication");
 	var success = function(boards) {
+		console.log(boards);
 		document.getElementById("p1").innerHTML = "";
 		for( i in boards){
 			item = boards[i];
