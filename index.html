@@ -60,7 +60,7 @@ asserts["Check lists with no time req"] = function(lists){
 asserts["Check lists with time req and enrich lists with pomodoro ticks"] = function(lists){
 	// breaking "do one thing" policy
 	console.log("Check lists with no time req and enrich lists with pomodoro ticks");
-	requiredLists = ["Today", "Tomorrow", "Weekend", "Week", "Month Plan", "3 Month Plan"]
+	requiredLists = ["Today", "Tomorrow", "Weekend", "Week", "Month", "3 Month Plan"]
 	listTags = getAnnotedTags(lists);
 	for(l in listTags){
 		var found = 0;
@@ -92,14 +92,15 @@ function parseTasks(name, list){
 	}
 	cards = list.cards;
 	sumTicks = 0;
-	convert = {"30 minute task" : 1, "Hour task": 2, "2 hour task": 4, "3 hour task":6, "5 hour task":10, "5 minute task" : 0, "8 hour task":16, "13 hour task":26, "Habbit":0};
+	convert = {"30 minute task" : 1, "Hour task": 2, "2 hour task": 4, "3 hour task":6, "5 hour task":10, "5 minute task" : 0.5, "8 hour task":16, "13 hour task":26, "Habbit":0};
 	for(c in cards){
 		card = cards[c];
 		labels = card.labels;
 		found = 0;
+		ln = undefined;
 		for(i in labels){
 			label = labels[i];
-			console.log(label);
+			ln = label.name;
 			tick = convert[label.name];
 			if(tick != undefined){
 				sumTicks = sumTicks + tick;
@@ -110,6 +111,11 @@ function parseTasks(name, list){
 			globalError = "Card " + JSON.stringify(card) + " is not labeled correctly <br/>"
 			return false;
 		}
+		if(card.due == undefined && ln !== "Habbit"){
+			globalError = "Card " + JSON.stringify(card) + " doens't have a due date";
+			return false;
+		}
+		console.log(card.due);
 	}
 	console.log(sumTicks);
 	console.log(sumTicks / list.ticks);
@@ -144,13 +150,25 @@ asserts["check today is sane @time"] = function(lists){
 			}
 			if(tag === "Weekend"){
 				weekend = listTags[l].backLink;
+				
 			}
 			if(tag === "Week"){
 				week = listTags[l].backLink;
 			}
+			if(tag === "Month"){
+				month = listTags[l].backLink;
+			}
 		}
 	}
-	return parseTasks("Today", today) && parseTasks("Tomorrow", tomorrow) && parseTasks("Weekend", weekend) && parseTasks("Week", week);
+	tomorrow.ticks = today.ticks + tomorrow.ticks;
+	Object.assign(tomorrow.cards, today.cards);
+	week.ticks = tomorrow.ticks + week.ticks;
+	Object.assign(week.cards, tomorrow.cards);
+	week.ticks = weekend.ticks + week.ticks;
+	Object.assign(week.cards, weekend.cards);
+	month.ticks = month.ticks + week.ticks;
+	Object.assign(month.cards, week.cards);
+	return parseTasks("Today", today) && parseTasks("Tomorrow", tomorrow) && parseTasks("Weekend", weekend) && parseTasks("Week", week) && parseTasks("Month", month);
 }
 asserts["check today for date. want everything that is in today to be moved to today, or to be moved to inbox?"] = function(){
 	console.log("check today for date. want everything that is in today to be moved to today, or to be moved to inbox?");
