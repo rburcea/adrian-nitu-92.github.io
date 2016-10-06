@@ -57,6 +57,12 @@ asserts["Check lists with no time req"] = function(lists){
 	console.log("passed!");
 	return true;
 }
+
+today = undefined;
+tomorrow = undefined;
+weekend = undefined;
+week = undefined;
+month = undefined;
 asserts["Check lists with time req and enrich lists with pomodoro ticks"] = function(lists){
 	// breaking "do one thing" policy
 	console.log("Check lists with no time req and enrich lists with pomodoro ticks");
@@ -80,6 +86,28 @@ asserts["Check lists with time req and enrich lists with pomodoro ticks"] = func
 		if(found == 1){
 			globalError = "Lists must have a tag that says how long they are allowed to stretch!<br/>" + JSON.stringify(lt);
 			return false;
+		}
+	}
+	for(l in listTags){
+		lt = listTags[l].tags;
+		for(t in lt){
+			tag = lt[t];
+			if(tag === "Today"){
+				today = listTags[l].backLink;
+			}
+			if(tag === "Tomorrow"){
+				tomorrow = listTags[l].backLink;
+			}
+			if(tag === "Weekend"){
+				weekend = listTags[l].backLink;
+				
+			}
+			if(tag === "Week"){
+				week = listTags[l].backLink;
+			}
+			if(tag === "Month"){
+				month = listTags[l].backLink;
+			}
 		}
 	}
 	console.log("passed!");
@@ -120,8 +148,8 @@ function parseTasks(name, list){
 	console.log(sumTicks);
 	console.log(sumTicks / list.ticks);
 	list.load = parseInt(String(100*(sumTicks / list.ticks)));
-	if(list.load > 70){
-		globalWarning = globalWarning + "Seems you are kinda overbooked for " + name + ".<br/>Please reschedule! Drop at least: " + (sumTicks - 0.7*list.ticks)  + "<br/>";
+	if(list.load > 75){
+		globalWarning = globalWarning + "Seems you are kinda overbooked for " + name + ".<br/>Please reschedule! Drop at least: " + (sumTicks - 0.75*list.ticks)  + "<br/>";
 	}
 	if(list.load > 100){
 		globalError = "Seems you are kinda overbooked for " + name + ".<br/>Please reschedule!<br/>Drop at least: " + (sumTicks - list.ticks) ;
@@ -130,36 +158,63 @@ function parseTasks(name, list){
 	globalWarning = globalWarning + name + "'s success rate = " + (100-list.load) + "%.<br/>";
 	return true;
 }
-
+dayLenghtInMs = (1000 * 60 * 60 * 24);
+asserts["check today for date. want everything that is in today to be moved to today, or to be moved to inbox?"] = function(){
+	console.log("check today for date. want everything that is in today to be moved to today, or to be moved to inbox?");
+	now = new Date().getTime();
+	todayStart = now - now % dayLenghtInMs;
+	todayEnd = todayStart + dayLenghtInMs;
+	cards = today.cards;
+	for(c in cards){
+		card = cards[c];
+		due = new Date(card.due).getTime();
+		if(!((due >= todayStart && due <= todayEnd) || card.labels[0].name === "Habbit")){
+			globalError = "Card " + JSON.stringify(card) + " is not dated correctly. It should be today <br/>"
+			return false;
+		}
+		
+	}
+	return true;
+}
+asserts["check tomorrow	for date. want everything that is in tomorrow to be moved to tomorrow, or to be moved to inbox?"] = function(){
+	console.log("check today for date. want everything that is in today to be moved to today, or to be moved to inbox?");
+	now = new Date().getTime();
+	todayStart = now - now % dayLenghtInMs;
+	tomorrowStart = todayStart + dayLenghtInMs;
+	tomorrowEnd = tomorrowStart + dayLenghtInMs;
+	cards = tomorrow.cards;
+	for(c in cards){
+		card = cards[c];
+		due = new Date(card.due).getTime();
+		if(!((due >= tomorrowStart && due <= tomorrowEnd) || card.labels[0].name === "Habbit")){
+			globalError = "Card " + JSON.stringify(card) + " is not dated correctly. It should be tomorrow	 <br/>"
+			return false;
+		}
+		
+	}
+	return true;
+}
+asserts["check week	for date. want everything that is in week to be moved to week, or to be moved to inbox?"] = function(){
+	console.log("check today for date. want everything that is in today to be moved to today, or to be moved to inbox?");
+	now = new Date().getTime();
+	todayStart = now - now % dayLenghtInMs;
+	tomorrowStart = todayStart + dayLenghtInMs;
+	tomorrowEnd = tomorrowStart + dayLenghtInMs;
+	weekEnd = todayStart + 8 * dayLenghtInMs;
+	cards = week.cards;
+	for(c in cards){
+		card = cards[c];
+		due = new Date(card.due).getTime();
+		if(!((due >= tomorrowEnd && due <= weekEnd) || card.labels[0].name === "Habbit")){
+			globalError = "Card " + JSON.stringify(card) + " is not dated correctly. It should be this week	 <br/>"
+			return false;
+		}
+		
+	}
+	return true;
+}
 asserts["check today is sane @time"] = function(lists){
 	console.log("check today is sane @time");
-	listTags = getAnnotedTags(lists);
-	today = undefined;
-	tomorrow = undefined;
-	weekend = undefined;
-	week = undefined;
-	for(l in listTags){
-		lt = listTags[l].tags;
-		for(t in lt){
-			tag = lt[t];
-			if(tag === "Today"){
-				today = listTags[l].backLink;
-			}
-			if(tag === "Tomorrow"){
-				tomorrow = listTags[l].backLink;
-			}
-			if(tag === "Weekend"){
-				weekend = listTags[l].backLink;
-				
-			}
-			if(tag === "Week"){
-				week = listTags[l].backLink;
-			}
-			if(tag === "Month"){
-				month = listTags[l].backLink;
-			}
-		}
-	}
 	tomorrow.ticks = today.ticks + tomorrow.ticks;
 	Object.assign(tomorrow.cards, today.cards);
 	week.ticks = tomorrow.ticks + week.ticks;
@@ -170,19 +225,6 @@ asserts["check today is sane @time"] = function(lists){
 	Object.assign(month.cards, week.cards);
 	return parseTasks("Today", today) && parseTasks("Tomorrow", tomorrow) && parseTasks("Weekend", weekend) && parseTasks("Week", week) && parseTasks("Month", month);
 }
-asserts["check today for date. want everything that is in today to be moved to today, or to be moved to inbox?"] = function(){
-	console.log("check today for date. want everything that is in today to be moved to today, or to be moved to inbox?");
-	return true;
-}
-asserts["estimate success of today ending. Stop if under 30%. success is 1-sum(time_tasks)/timetoday"] = function(){
-	console.log("estimate success of today ending. Stop if under 30%");
-	return true;
-}
-asserts["Check today. Check number of items with a warning if they exceed 6. Error out if they exceed 10. Check dates of items. Error out and offer fix with place or fix with move if they're not for today. Compute time left and estimate success. Error out If under 30%"] = function(){
-	console.log("Check today. Check number of items with a warning if they exceed 6. Error out if they exceed 10. Check dates of items. Error out and offer fix with place or fix with move if they're not for today. Compute time left and estimate success. Error out if under 30%");
-	return true;
-}
-
 var done = function(lists){
 	document.getElementById("p1").innerHTML = "";
 	counter = counter + 1;
