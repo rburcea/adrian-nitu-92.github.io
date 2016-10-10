@@ -182,13 +182,17 @@ asserts["check tomorrow	for date. want everything that is in tomorrow to be move
 	todayStart = now - now % dayLenghtInMs;
 	tomorrowStart = todayStart + dayLenghtInMs;
 	tomorrowEnd = tomorrowStart + dayLenghtInMs;
+	mondayStart = todayStart + 3 * dayLenghtInMs;
+	mondayEnd = mondayStart + dayLenghtInMs;
 	cards = tomorrow.cards;
 	for(c in cards){
 		card = cards[c];
 		due = new Date(card.due).getTime();
 		if(!((due >= tomorrowStart && due <= tomorrowEnd) || card.labels[0].name === "Habbit")){
-			globalError = "Card " + JSON.stringify(card) + " is not dated correctly. It should be tomorrow	 <br/>"
-			return false;
+			if(!((due >= mondayStart && due <= mondayEnd) || card.labels[0].name === "Habbit")){
+				globalError = "Card " + JSON.stringify(card) + " is not dated correctly. It should be tomorrow	 <br/>"
+				return false;
+			}
 		}
 		
 	}
@@ -213,6 +217,7 @@ asserts["check week	for date. want everything that is in week to be moved to wee
 	}
 	return true;
 }
+
 asserts["check today is sane @time"] = function(lists){
 	console.log("check today is sane @time");
 	tomorrow.ticks = today.ticks + tomorrow.ticks;
