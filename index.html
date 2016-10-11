@@ -63,10 +63,11 @@ tomorrow = undefined;
 weekend = undefined;
 week = undefined;
 month = undefined;
+_3month = undefined;
 asserts["Check lists with time req and enrich lists with pomodoro ticks"] = function(lists){
 	// breaking "do one thing" policy
 	console.log("Check lists with no time req and enrich lists with pomodoro ticks");
-	requiredLists = ["Today", "Tomorrow", "Weekend", "Week", "Month", "3 Month Plan"]
+	requiredLists = ["Today", "Tomorrow", "Weekend", "Week", "Month", "3 Month"]
 	listTags = getAnnotedTags(lists);
 	for(l in listTags){
 		var found = 0;
@@ -107,6 +108,9 @@ asserts["Check lists with time req and enrich lists with pomodoro ticks"] = func
 			}
 			if(tag === "Month"){
 				month = listTags[l].backLink;
+			}
+			if(tag === "3 Month"){
+				_3month = listTags[l].backLink;
 			}
 		}
 	}
@@ -162,6 +166,7 @@ dayLenghtInMs = (1000 * 60 * 60 * 24);
 asserts["check today for date. want everything that is in today to be moved to today, or to be moved to inbox?"] = function(){
 	console.log("check today for date. want everything that is in today to be moved to today, or to be moved to inbox?");
 	now = new Date().getTime();
+	now = now + 3*60*60 *1000;
 	todayStart = now - now % dayLenghtInMs;
 	todayEnd = todayStart + dayLenghtInMs;
 	cards = today.cards;
@@ -177,8 +182,9 @@ asserts["check today for date. want everything that is in today to be moved to t
 	return true;
 }
 asserts["check tomorrow	for date. want everything that is in tomorrow to be moved to tomorrow, or to be moved to inbox?"] = function(){
-	console.log("check today for date. want everything that is in today to be moved to today, or to be moved to inbox?");
+	console.log("check tomorrow for date. want everything that is in tomorrow to be moved to tomorrow, or to be moved to inbox?");
 	now = new Date().getTime();
+	now = now + 3*60*60 *1000;
 	todayStart = now - now % dayLenghtInMs;
 	tomorrowStart = todayStart + dayLenghtInMs;
 	tomorrowEnd = tomorrowStart + dayLenghtInMs;
@@ -199,8 +205,9 @@ asserts["check tomorrow	for date. want everything that is in tomorrow to be move
 	return true;
 }
 asserts["check week	for date. want everything that is in week to be moved to week, or to be moved to inbox?"] = function(){
-	console.log("check today for date. want everything that is in today to be moved to today, or to be moved to inbox?");
+	console.log("check week for date. want everything that is in week to be moved to week, or to be moved to inbox?");
 	now = new Date().getTime();
+	now = now + 3*60*60 *1000;
 	todayStart = now - now % dayLenghtInMs;
 	tomorrowStart = todayStart + dayLenghtInMs;
 	tomorrowEnd = tomorrowStart + dayLenghtInMs;
@@ -217,6 +224,50 @@ asserts["check week	for date. want everything that is in week to be moved to wee
 	}
 	return true;
 }
+asserts["check month for date. want everything that is in week to be moved to month, or to be moved to inbox?"] = function(){
+	console.log("check month for date. want everything that is in month to be moved to month, or to be moved to inbox?");
+	now = new Date().getTime();
+	now = now + 3*60*60 *1000;
+	todayStart = now - now % dayLenghtInMs;
+	tomorrowStart = todayStart + dayLenghtInMs;
+	tomorrowEnd = tomorrowStart + dayLenghtInMs;
+	weekEnd = todayStart + 8 * dayLenghtInMs;
+	monthEnd = todayStart + 31 * dayLenghtInMs;
+	cards = month.cards;
+	for(c in cards){
+		card = cards[c];
+		due = new Date(card.due).getTime();
+		if(!((due >= weekEnd && due <= monthEnd) || card.labels[0].name === "Habbit")){
+			globalError = "Card " + JSON.stringify(card) + " is not dated correctly. It should be this month <br/>"
+			return false;
+		}
+		
+	}
+	return true;
+}
+asserts["check 3month for date. want everything that is in 3 to be moved to month, or to be moved to inbox?"] = function(){
+	console.log("check month for date. want everything that is in month to be moved to month, or to be moved to inbox?");
+	now = new Date().getTime();
+	now = now + 3*60*60 *1000;
+	todayStart = now - now % dayLenghtInMs;
+	tomorrowStart = todayStart + dayLenghtInMs;
+	tomorrowEnd = tomorrowStart + dayLenghtInMs;
+	weekEnd = todayStart + 8 * dayLenghtInMs;
+	monthEnd = todayStart + 31 * dayLenghtInMs;
+	_3monthEnd = todayStart + 3 * 31 * dayLenghtInMs;
+	cards = _3month.cards;
+	for(c in cards){
+		card = cards[c];
+		due = new Date(card.due).getTime();
+		if(!((due >= monthEnd && due <= _3monthEnd) || card.labels[0].name === "Habbit")){
+			globalError = "Card " + JSON.stringify(card) + " is not dated correctly. It should be 3 month <br/>"
+			return false;
+		}
+		
+	}
+	return true;
+}
+
 
 asserts["check today is sane @time"] = function(lists){
 	console.log("check today is sane @time");
@@ -228,7 +279,9 @@ asserts["check today is sane @time"] = function(lists){
 	Object.assign(week.cards, weekend.cards);
 	month.ticks = month.ticks + week.ticks;
 	Object.assign(month.cards, week.cards);
-	return parseTasks("Today", today) && parseTasks("Tomorrow", tomorrow) && parseTasks("Weekend", weekend) && parseTasks("Week", week) && parseTasks("Month", month);
+	_3month.ticks = month.ticks + _3month.ticks;
+	Object.assign(_3month.cards, month.cards);
+	return parseTasks("Today", today) && parseTasks("Tomorrow", tomorrow) && parseTasks("Weekend", weekend) && parseTasks("Week", week) && parseTasks("Month", month) && parseTasks("3 Month", _3month);;
 }
 var done = function(lists){
 	document.getElementById("p1").innerHTML = "";
