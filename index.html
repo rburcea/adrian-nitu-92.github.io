@@ -276,11 +276,8 @@ asserts["check today is sane @time"] = function(lists){
 	Object.assign(tomorrow.cards, today.cards);
 	week.ticks = tomorrow.ticks + week.ticks;
 	Object.assign(week.cards, tomorrow.cards);
-	week.ticks = weekend.ticks + week.ticks;
 	Object.assign(week.cards, weekend.cards);
-	month.ticks = month.ticks + week.ticks;
 	Object.assign(month.cards, week.cards);
-	_3month.ticks = month.ticks + _3month.ticks;
 	Object.assign(_3month.cards, month.cards);
 	return parseTasks("Today", today) && parseTasks("Tomorrow", tomorrow) && parseTasks("Weekend", weekend) && parseTasks("Week", week) && parseTasks("Month", month) && parseTasks("3 Month", _3month);;
 }
