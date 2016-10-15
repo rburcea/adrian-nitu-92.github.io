@@ -64,10 +64,11 @@ weekend = undefined;
 week = undefined;
 month = undefined;
 _3month = undefined;
+_6month = undefined;
 asserts["Check lists with time req and enrich lists with pomodoro ticks"] = function(lists){
 	// breaking "do one thing" policy
 	console.log("Check lists with no time req and enrich lists with pomodoro ticks");
-	requiredLists = ["Today", "Tomorrow", "Weekend", "Week", "Month", "3 Month"]
+	requiredLists = ["Today", "Tomorrow", "Weekend", "Week", "Month", "3 Month", "6 Month"]
 	listTags = getAnnotedTags(lists);
 	for(l in listTags){
 		var found = 0;
@@ -112,6 +113,9 @@ asserts["Check lists with time req and enrich lists with pomodoro ticks"] = func
 			if(tag === "3 Month"){
 				_3month = listTags[l].backLink;
 			}
+			if(tag === "6 Month"){
+				_6month = listTags[l].backLink;
+			}
 		}
 	}
 	console.log("passed!");
@@ -124,7 +128,7 @@ function parseTasks(name, list){
 	}
 	cards = list.cards;
 	sumTicks = 0;
-	convert = {"30 minute task" : 1, "Hour task": 2, "2 hour task": 4, "3 hour task":6, "5 hour task":10, "5 minute task" : 0.5, "8 hour task":16, "13 hour task":26, "Habbit":0};
+	convert = {"30 minute task" : 1, "Hour task": 2, "2 hour task": 4, "3 hour task":6, "5 hour task":10, "5 minute task" : 0.5, "8 hour task":16, "13 hour task":26, "Day":28, "Week":7*28, "Month":4*7*28, "3 Month":3*4*7*28, "6 Month":6*4*7*28, "Year":12*4*7*28, "Habbit":0};
 	for(c in cards){
 		card = cards[c];
 		labels = card.labels;
@@ -268,6 +272,26 @@ asserts["check 3month for date. want everything that is in 3 to be moved to mont
 	}
 	return true;
 }
+asserts["check 6month for date. want everything that is in 3 to be moved to month, or to be moved to inbox?"] = function(){
+	console.log("check month for date. want everything that is in month to be moved to month, or to be moved to inbox?");
+	now = new Date().getTime();
+	now = now + 3*60*60 *1000;
+	todayStart = now - now % dayLenghtInMs;
+	_3monthEnd = todayStart + 3* 31 * dayLenghtInMs;
+	_6monthEnd = todayStart + 6 * 31 * dayLenghtInMs;
+	cards = _6month.cards;
+	for(c in cards){
+		card = cards[c];
+		due = new Date(card.due).getTime();
+		if(!((due >= _3monthEnd && due <= _6monthEnd) || card.labels[0].name === "Habbit")){
+			globalError = "Card " + JSON.stringify(card) + " is not dated correctly. It should be 6 month <br/>"
+			return false;
+		}
+		
+	}
+	return true;
+}
+
 
 
 asserts["check today is sane @time"] = function(lists){
@@ -279,7 +303,8 @@ asserts["check today is sane @time"] = function(lists){
 	Object.assign(week.cards, weekend.cards);
 	Object.assign(month.cards, week.cards);
 	Object.assign(_3month.cards, month.cards);
-	return parseTasks("Today", today) && parseTasks("Tomorrow", tomorrow) && parseTasks("Weekend", weekend) && parseTasks("Week", week) && parseTasks("Month", month) && parseTasks("3 Month", _3month);;
+	Object.assign(_6month.cards, _3month.cards);
+	return parseTasks("Today", today) && parseTasks("Tomorrow", tomorrow) && parseTasks("Weekend", weekend) && parseTasks("Week", week) && parseTasks("Month", month) && parseTasks("3 Month", _3month) && parseTasks("6 Month", _6month);;
 }
 var done = function(lists){
 	document.getElementById("p1").innerHTML = "";
