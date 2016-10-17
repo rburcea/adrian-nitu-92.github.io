@@ -184,13 +184,6 @@ asserts["check today for date. want everything that is in today to be moved to t
 		}
 		
 	}
-	return true;
-}
-asserts["check tomorrow	for date. want everything that is in tomorrow to be moved to tomorrow, or to be moved to inbox?"] = function(){
-	console.log("check tomorrow for date. want everything that is in tomorrow to be moved to tomorrow, or to be moved to inbox?");
-	now = new Date().getTime();
-	now = now + 3*60*60 *1000;
-	todayStart = now - now % dayLenghtInMs;
 	tomorrowStart = todayStart + dayLenghtInMs;
 	tomorrowEnd = tomorrowStart + dayLenghtInMs;
 	mondayStart = todayStart + 3 * dayLenghtInMs;
@@ -207,15 +200,6 @@ asserts["check tomorrow	for date. want everything that is in tomorrow to be move
 		}
 		
 	}
-	return true;
-}
-asserts["check week	for date. want everything that is in week to be moved to week, or to be moved to inbox?"] = function(){
-	console.log("check week for date. want everything that is in week to be moved to week, or to be moved to inbox?");
-	now = new Date().getTime();
-	now = now + 3*60*60 *1000;
-	todayStart = now - now % dayLenghtInMs;
-	tomorrowStart = todayStart + dayLenghtInMs;
-	tomorrowEnd = tomorrowStart + dayLenghtInMs;
 	weekEnd = todayStart + 8 * dayLenghtInMs;
 	cards = week.cards;
 	for(c in cards){
@@ -227,16 +211,6 @@ asserts["check week	for date. want everything that is in week to be moved to wee
 		}
 		
 	}
-	return true;
-}
-asserts["check month for date. want everything that is in week to be moved to month, or to be moved to inbox?"] = function(){
-	console.log("check month for date. want everything that is in month to be moved to month, or to be moved to inbox?");
-	now = new Date().getTime();
-	now = now + 3*60*60 *1000;
-	todayStart = now - now % dayLenghtInMs;
-	tomorrowStart = todayStart + dayLenghtInMs;
-	tomorrowEnd = tomorrowStart + dayLenghtInMs;
-	weekEnd = todayStart + 8 * dayLenghtInMs;
 	monthEnd = todayStart + 31 * dayLenghtInMs;
 	cards = month.cards;
 	for(c in cards){
@@ -248,17 +222,6 @@ asserts["check month for date. want everything that is in week to be moved to mo
 		}
 		
 	}
-	return true;
-}
-asserts["check 3month for date. want everything that is in 3 to be moved to month, or to be moved to inbox?"] = function(){
-	console.log("check month for date. want everything that is in month to be moved to month, or to be moved to inbox?");
-	now = new Date().getTime();
-	now = now + 3*60*60 *1000;
-	todayStart = now - now % dayLenghtInMs;
-	tomorrowStart = todayStart + dayLenghtInMs;
-	tomorrowEnd = tomorrowStart + dayLenghtInMs;
-	weekEnd = todayStart + 8 * dayLenghtInMs;
-	monthEnd = todayStart + 31 * dayLenghtInMs;
 	_3monthEnd = todayStart + 3 * 31 * dayLenghtInMs;
 	cards = _3month.cards;
 	for(c in cards){
@@ -270,14 +233,6 @@ asserts["check 3month for date. want everything that is in 3 to be moved to mont
 		}
 		
 	}
-	return true;
-}
-asserts["check 6month for date. want everything that is in 3 to be moved to month, or to be moved to inbox?"] = function(){
-	console.log("check month for date. want everything that is in month to be moved to month, or to be moved to inbox?");
-	now = new Date().getTime();
-	now = now + 3*60*60 *1000;
-	todayStart = now - now % dayLenghtInMs;
-	_3monthEnd = todayStart + 3* 31 * dayLenghtInMs;
 	_6monthEnd = todayStart + 6 * 31 * dayLenghtInMs;
 	cards = _6month.cards;
 	for(c in cards){
@@ -288,18 +243,16 @@ asserts["check 6month for date. want everything that is in 3 to be moved to mont
 			return false;
 		}
 		
-	}
 	return true;
 }
-
 
 
 asserts["check today is sane @time"] = function(lists){
 	console.log("check today is sane @time");
 	tomorrow.ticks = today.ticks + tomorrow.ticks;
 	Object.assign(tomorrow.cards, today.cards);
-	week.ticks = tomorrow.ticks + week.ticks;
-	Object.assign(week.cards, tomorrow.cards);
+	weekend.ticks = tomorrow.ticks + weekend.ticks;
+	Object.assign(weekend.cards, tomorrow.cards);
 	Object.assign(week.cards, weekend.cards);
 	Object.assign(month.cards, week.cards);
 	Object.assign(_3month.cards, month.cards);
