@@ -12,6 +12,7 @@ counter = 0; // TODO: no global state please
 globalWarning = "";
 globalError = "";
 asserts = {};
+board = undefined;
 Object.values = obj => Object.keys(obj).map(key => obj[key]);
 
 function extractTags(string){
@@ -57,18 +58,76 @@ asserts["Check lists with no time req"] = function(lists){
 	console.log("passed!");
 	return true;
 }
+finalLists = {}
+function genLists(){
+	requiredLists = [];
+	timings = {};
+	secTimings = {};
+	dayLenghtInMs = (1000 * 60 * 60 * 24);
+	weekLengthInMs = (dayLenghtInMs * 7);
+	mondayStart = 1476640521739;
+	if(board === "Grow"){
+		requiredLists = ["Today", "Tomorrow", "Weekend", "Week", "Month", "3 Month", "6 Month"];
+		now = new Date().getTime();
+		now = now + 3*60*60 *1000;
+		todayStart = now - now % dayLenghtInMs;
+		yesterStart = todayStart - dayLenghtInMs;
+		tomorrowStart = todayStart + dayLenghtInMs;
+		thisMonday = mondayStart;
+		while(thisMonday + dayLenghtInMs < now){
+			thisMonday = thisMonday + weekLengthInMs;
+		}
+		thisTuesday = thisMonday + dayLenghtInMs;
+		tomorrowEnd = tomorrowStart + dayLenghtInMs;
+		thisTuesdayEnd = thisTuesday + dayLenghtInMs;
+		weekEnd = todayStart + 8 * dayLenghtInMs;
+		monthEnd = todayStart + 31 * dayLenghtInMs;
+		_3monthEnd = todayStart + 3 * 31 * dayLenghtInMs;
+		_6monthEnd = todayStart + 6 * 31 * dayLenghtInMs;
+		timings["Today"] = {"start":yesterStart, "end":tomorrowStart};
+		timings["Tomorrow"] = {"start":tomorrowStart, "end":tomorrowEnd};
+		timings["Week"] = {"start":tomorrowEnd, "end":weekEnd};
+		timings["Month"] = {"start":weekEnd, "end":monthEnd};
+		timings["3 Month"] = {"start":monthEnd, "end":_3monthEnd};
+		timings["6 Month"] = {"start":_3monthEnd, "end":_6monthEnd};
 
-today = undefined;
-tomorrow = undefined;
-weekend = undefined;
-week = undefined;
-month = undefined;
-_3month = undefined;
-_6month = undefined;
+		secTimings["Today"] = {"start":thisMonday, "end":thisTuesday};
+		secTimings["Tomorrow"] = {"start":thisTuesday, "end":thisTuesdayEnd};
+		secTimings["Week"] = {"start":0, "end":0};
+		secTimings["Month"] = {"start":0, "end":0};
+		secTimings["3 Month"] = {"start":0, "end":0};
+		secTimings["6 Month"] = {"start":0, "end":0};
+	} else if (board === "Work") {
+		requiredLists = requiredLists = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+		now = new Date().getTime();
+		now = now + 3*60*60 *1000;
+		thisMonday = mondayStart;
+		while(thisMonday + dayLenghtInMs < now){
+			thisMonday = thisMonday + weekLengthInMs;
+		}
+		thisTuesday = thisMonday + dayLenghtInMs;
+		thisWednesday = thisTuesday + dayLenghtInMs;
+		thisThursday = thisWednesday + dayLenghtInMs;
+		thisFriday = thisThursday + dayLenghtInMs;
+		thisFridayEnd = thisFriday + dayLenghtInMs;
+
+		timings["Monday"] = {"start":thisMonday, "end":thisTuesday};
+		timings["Tuesday"] = {"start":thisTuesday, "end":thisWednesday};
+		timings["Wednesday"] = {"start":thisWednesday, "end":thisThursday};
+		timings["Thursday"] = {"start":thisThursday, "end":thisFriday};
+		timings["Friday"] = {"start":thisFriday, "end":thisFridayEnd};
+
+		secTimings["Monday"] = {"start":0, "end":0};
+		secTimings["Tuesday"] = {"start":0, "end":0};
+		secTimings["Wednesday"] = {"start":0, "end":0};
+		secTimings["Thursday"] = {"start":0, "end":0};
+		secTimings["Friday"] = {"start":0, "end":0};
+	}
+}
 asserts["Check lists with time req and enrich lists with pomodoro ticks"] = function(lists){
 	// breaking "do one thing" policy
 	console.log("Check lists with no time req and enrich lists with pomodoro ticks");
-	requiredLists = ["Today", "Tomorrow", "Weekend", "Week", "Month", "3 Month", "6 Month"]
+	genLists();
 	listTags = getAnnotedTags(lists);
 	for(l in listTags){
 		var found = 0;
@@ -94,27 +153,8 @@ asserts["Check lists with time req and enrich lists with pomodoro ticks"] = func
 		lt = listTags[l].tags;
 		for(t in lt){
 			tag = lt[t];
-			if(tag === "Today"){
-				today = listTags[l].backLink;
-			}
-			if(tag === "Tomorrow"){
-				tomorrow = listTags[l].backLink;
-			}
-			if(tag === "Weekend"){
-				weekend = listTags[l].backLink;
-				
-			}
-			if(tag === "Week"){
-				week = listTags[l].backLink;
-			}
-			if(tag === "Month"){
-				month = listTags[l].backLink;
-			}
-			if(tag === "3 Month"){
-				_3month = listTags[l].backLink;
-			}
-			if(tag === "6 Month"){
-				_6month = listTags[l].backLink;
+			if(requiredLists.indexOf(tag) >= 0){
+				finalLists[tag] = listTags[l].backLink
 			}
 		}
 	}
@@ -166,98 +206,54 @@ function parseTasks(name, list){
 	globalWarning = globalWarning + name + "'s success rate = " + (100-list.load) + "%.<br/>";
 	return true;
 }
-dayLenghtInMs = (1000 * 60 * 60 * 24);
-asserts["check today for date. want everything that is in today to be moved to today, or to be moved to inbox?"] = function(){
-	console.log("check today for date. want everything that is in today to be moved to today, or to be moved to inbox?");
-	now = new Date().getTime();
-	now = now + 3*60*60 *1000;
-	todayStart = now - now % dayLenghtInMs;
-	yesterStart = todayStart - dayLenghtInMs;
-	todayEnd = todayStart + dayLenghtInMs;
-	cards = today.cards;
+var newFunc = function(l, start, end, name){
+	cards = l.cards;
 	for(c in cards){
 		card = cards[c];
 		due = new Date(card.due).getTime();
-		if(!((due >= yesterStart && due <= todayEnd) || card.labels[0].name === "Habbit")){
-			globalError = "Card " + JSON.stringify(card) + " is not dated correctly. It should be today <br/>"
+		if(!((due >= start && due <= end) || card.labels[0].name === "Habbit")){
+			globalError = "Card " + JSON.stringify(card) + " is not dated correctly. It should be " +name+ "<br/>"
 			return false;
 		}
 		
 	}
-	tomorrowStart = todayStart + dayLenghtInMs;
-	tomorrowEnd = tomorrowStart + dayLenghtInMs;
-	mondayStart = todayStart + 3 * dayLenghtInMs;
-	mondayEnd = mondayStart + dayLenghtInMs;
-	cards = tomorrow.cards;
-	for(c in cards){
-		card = cards[c];
-		due = new Date(card.due).getTime();
-		if(!((due >= tomorrowStart && due <= tomorrowEnd) || card.labels[0].name === "Habbit")){
-			if(!((due >= mondayStart && due <= mondayEnd) || card.labels[0].name === "Habbit")){
-				globalError = "Card " + JSON.stringify(card) + " is not dated correctly. It should be tomorrow	 <br/>"
-				return false;
-			}
+}
+asserts["check * for date. want everything that is in today to be moved to today, or to be moved to inbox?"] = function(){
+	console.log("check * for date. want everything that is in today to be moved to today, or to be moved to inbox?");
+	for(l in requiredLists){
+		name = requiredLists[l];
+		pass = false;
+		if(board === "Grow" && name === "Weekend"){
+			pass = true;
 		}
-		
+		console.log(name);
+		console.log(timings);
+		if(pass === false)
+			if(newFunc(finalLists[name], timings[name].start, timings[name].end, name) === false)
+				if(newFunc(finalLists[name], secTimings[name].start, secTimings[name].end, name) === false)
+					return false;
 	}
-	weekEnd = todayStart + 8 * dayLenghtInMs;
-	cards = week.cards;
-	for(c in cards){
-		card = cards[c];
-		due = new Date(card.due).getTime();
-		if(!((due >= tomorrowEnd && due <= weekEnd) || card.labels[0].name === "Habbit")){
-			globalError = "Card " + JSON.stringify(card) + " is not dated correctly. It should be this week	 <br/>"
-			return false;
-		}
-		
-	}
-	monthEnd = todayStart + 31 * dayLenghtInMs;
-	cards = month.cards;
-	for(c in cards){
-		card = cards[c];
-		due = new Date(card.due).getTime();
-		if(!((due >= weekEnd && due <= monthEnd) || card.labels[0].name === "Habbit")){
-			globalError = "Card " + JSON.stringify(card) + " is not dated correctly. It should be this month <br/>"
-			return false;
-		}
-		
-	}
-	_3monthEnd = todayStart + 3 * 31 * dayLenghtInMs;
-	cards = _3month.cards;
-	for(c in cards){
-		card = cards[c];
-		due = new Date(card.due).getTime();
-		if(!((due >= monthEnd && due <= _3monthEnd) || card.labels[0].name === "Habbit")){
-			globalError = "Card " + JSON.stringify(card) + " is not dated correctly. It should be 3 month <br/>"
-			return false;
-		}
-		
-	}
-	_6monthEnd = todayStart + 6 * 31 * dayLenghtInMs;
-	cards = _6month.cards;
-	for(c in cards){
-		card = cards[c];
-		due = new Date(card.due).getTime();
-		if(!((due >= _3monthEnd && due <= _6monthEnd) || card.labels[0].name === "Habbit")){
-			globalError = "Card " + JSON.stringify(card) + " is not dated correctly. It should be 6 month <br/>"
-			return false;
-		}
-		
 	return true;
 }
 
 
-asserts["check today is sane @time"] = function(lists){
+asserts["check today is sane @time"] = function(){
 	console.log("check today is sane @time");
-	tomorrow.ticks = today.ticks + tomorrow.ticks;
-	Object.assign(tomorrow.cards, today.cards);
-	weekend.ticks = tomorrow.ticks + weekend.ticks;
-	Object.assign(weekend.cards, tomorrow.cards);
-	Object.assign(week.cards, weekend.cards);
-	Object.assign(month.cards, week.cards);
-	Object.assign(_3month.cards, month.cards);
-	Object.assign(_6month.cards, _3month.cards);
-	return parseTasks("Today", today) && parseTasks("Tomorrow", tomorrow) && parseTasks("Weekend", weekend) && parseTasks("Week", week) && parseTasks("Month", month) && parseTasks("3 Month", _3month) && parseTasks("6 Month", _6month);;
+	if(board === "Grow"){
+		Object.assign(finalLists["Week"].cards, finalLists["Today"].cards);
+		Object.assign(finalLists["Week"].cards, finalLists["Tomorrow"].cards);
+		Object.assign(finalLists["Week"].cards, finalLists["Weekend"].cards);
+		Object.assign(finalLists["Month"].cards, finalLists["Week"].cards);
+		Object.assign(finalLists["3 Month"].cards, finalLists["Month"].cards);
+		Object.assign(finalLists["6 Month"].cards, finalLists["3 Month"].cards);
+	}
+	for(l in requiredLists){
+		name = requiredLists[l];
+		if( parseTasks(name, finalLists[name]) === false ){
+			return false;
+		}
+	}
+	return true;
 }
 var done = function(lists){
 	document.getElementById("p1").innerHTML = "";
@@ -298,7 +294,8 @@ var populateLists = function(lists){
 	}
 }
 
-var boardSelect = function(boardID){
+var boardSelect = function(boardID, boardName){
+	board = boardName;
 	var success = function(answer) {
 		console.log(answer);
 		document.getElementById("p1").innerHTML = "";
@@ -317,7 +314,7 @@ var boardSelect = function(boardID){
 	Trello.get('/boards/'+ boardID +'/lists', success, error);
 }
 
-var authenticationSuccess = function() { 
+var authenticationSuccess = function() {
 	console.log("Successful authentication");
 	var success = function(boards) {
 		console.log(boards);
@@ -325,7 +322,7 @@ var authenticationSuccess = function() {
 		for( i in boards){
 			item = boards[i];
 			document.getElementById("p1").innerHTML = document.getElementById("p1").innerHTML +
-			"<button onclick=\"boardSelect('"+item.id+"')\">" + 
+			"<button onclick=\"boardSelect('"+item.id+"', '"+item.name+"')\">" +
 			item.name + "</button><br/>";
 		}
 	};
@@ -334,7 +331,7 @@ var authenticationSuccess = function() {
 		console.log(errorMsg);
 	};
 
-	Trello.get('/member/me/boards', success, error)
+	Trello.get('/member/me/boards', success, error);
 };
 var authenticationFailure = function() { alert("Failed authentication"); };
 
