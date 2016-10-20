@@ -69,7 +69,7 @@ function genLists(){
 	if(board === "Grow"){
 		requiredLists = ["Today", "Tomorrow", "Weekend", "Week", "Month", "3 Month", "6 Month"];
 		now = new Date().getTime();
-		now = now + 3*60*60 *1000;
+		now = now + 3*60*60*1000;
 		todayStart = now - now % dayLenghtInMs;
 		yesterStart = todayStart - dayLenghtInMs;
 		tomorrowStart = todayStart + dayLenghtInMs;
@@ -191,10 +191,7 @@ function parseTasks(name, list){
 			globalError = "Card " + JSON.stringify(card) + " doens't have a due date";
 			return false;
 		}
-		console.log(card.due);
 	}
-	console.log(sumTicks);
-	console.log(sumTicks / list.ticks);
 	list.load = parseInt(String(100*(sumTicks / list.ticks)));
 	if(list.load > 75){
 		globalWarning = globalWarning + "Seems you are kinda overbooked for " + name + ".<br/>Please reschedule! Drop at least: " + (sumTicks - 0.75*list.ticks)  + "<br/>";
@@ -211,12 +208,17 @@ var newFunc = function(l, start, end, name){
 	for(c in cards){
 		card = cards[c];
 		due = new Date(card.due).getTime();
-		if(!((due >= start && due <= end) || card.labels[0].name === "Habbit")){
-			globalError = "Card " + JSON.stringify(card) + " is not dated correctly. It should be " +name+ "<br/>"
+		if(!((due > start && due < end) || card.labels[0].name === "Habbit")){
+			state = due + " < " + start;
+			if(due > end){
+				state = due + " > " + end;
+			}
+			globalError = "Card " + JSON.stringify(card) + " is not dated correctly. It should be " +name+ ", but it is " + state + ".<br/>"
 			return false;
 		}
 		
 	}
+	return true;
 }
 asserts["check * for date. want everything that is in today to be moved to today, or to be moved to inbox?"] = function(){
 	console.log("check * for date. want everything that is in today to be moved to today, or to be moved to inbox?");
@@ -226,11 +228,9 @@ asserts["check * for date. want everything that is in today to be moved to today
 		if(board === "Grow" && name === "Weekend"){
 			pass = true;
 		}
-		console.log(name);
-		console.log(timings);
 		if(pass === false)
 			if(newFunc(finalLists[name], timings[name].start, timings[name].end, name) === false)
-				if(newFunc(finalLists[name], secTimings[name].start, secTimings[name].end, name) === false)
+				//if(newFunc(finalLists[name], secTimings[name].start, secTimings[name].end, name) === false)
 					return false;
 	}
 	return true;
@@ -297,7 +297,6 @@ var populateLists = function(lists){
 var boardSelect = function(boardID, boardName){
 	board = boardName;
 	var success = function(answer) {
-		console.log(answer);
 		document.getElementById("p1").innerHTML = "";
 		var lists = {};
 		for(i in answer){
@@ -317,7 +316,6 @@ var boardSelect = function(boardID, boardName){
 var authenticationSuccess = function() {
 	console.log("Successful authentication");
 	var success = function(boards) {
-		console.log(boards);
 		document.getElementById("p1").innerHTML = "";
 		for( i in boards){
 			item = boards[i];
