@@ -210,12 +210,12 @@ var newFunc = function(l, start, end, name){
 		due = new Date(card.due).getTime();
 		if(!((due > start) || card.labels[0].name === "Habbit")){
 			state = due + " < " + start;
-			globalError = "Card " + JSON.stringify(card) + " is not dated correctly. It should be " +name+ ", but it is " + state + ".<br/>"
+			globalError = "Card " + card.name + ": " + card.url + " is not dated correctly. It should be " +name+ ", but it is " + state + ".<br/>"
 			return false;
 		}
 		if(!((due < end) || card.labels[0].name === "Habbit")){
 			state = due + " > " + end;
-			globalWarning = globalWarning + "Card " + JSON.stringify(card) + " is not dated correctly. It should be " +name+ ", but it is " + state + ".<br/>"
+			globalWarning = globalWarning + "Card " + card.name + ": " + card.url + " is not dated correctly. It should be " +name+ ", but it is " + state + ".<br/>"
 		}
 	}
 	return true;
