@@ -67,7 +67,7 @@ function genLists(){
 	weekLengthInMs = (dayLenghtInMs * 7);
 	mondayStart = 1476640521739;
 	if(board === "Grow"){
-		requiredLists = ["Today", "Tomorrow", "Weekend", "Week", "Month", "3 Month", "6 Month"];
+		requiredLists = ["Today", "Tomorrow", "Week", "Month", "3 Month", "6 Month"];
 		now = new Date().getTime();
 		now = now + 3*60*60*1000;
 		todayStart = now - now % dayLenghtInMs;
@@ -224,14 +224,9 @@ asserts["check * for date. want everything that is in today to be moved to today
 	console.log("check * for date. want everything that is in today to be moved to today, or to be moved to inbox?");
 	for(l in requiredLists){
 		name = requiredLists[l];
-		pass = false;
-		if(board === "Grow" && name === "Weekend"){
-			pass = true;
-		}
-		if(pass === false)
-			if(newFunc(finalLists[name], timings[name].start, timings[name].end, name) === false)
-				//if(newFunc(finalLists[name], secTimings[name].start, secTimings[name].end, name) === false)
-					return false;
+		if(newFunc(finalLists[name], timings[name].start, timings[name].end, name) === false)
+			//if(newFunc(finalLists[name], secTimings[name].start, secTimings[name].end, name) === false)
+				return false;
 	}
 	return true;
 }
@@ -242,7 +237,6 @@ asserts["check today is sane @time"] = function(){
 	if(board === "Grow"){
 		Object.assign(finalLists["Week"].cards, finalLists["Today"].cards);
 		Object.assign(finalLists["Week"].cards, finalLists["Tomorrow"].cards);
-		Object.assign(finalLists["Week"].cards, finalLists["Weekend"].cards);
 		Object.assign(finalLists["Month"].cards, finalLists["Week"].cards);
 		Object.assign(finalLists["3 Month"].cards, finalLists["Month"].cards);
 		Object.assign(finalLists["6 Month"].cards, finalLists["3 Month"].cards);
