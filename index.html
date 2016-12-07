@@ -67,7 +67,7 @@ function genLists(){
 	weekLengthInMs = (dayLenghtInMs * 7);
 	mondayStart = 1476640521739;
 	if(board === "Grow"){
-		requiredLists = ["Today", "Tomorrow", "Week", "Month", "3 Month", "6 Month"];
+		requiredLists = ["Today", "Tomorrow", "Week", "Month", "3 Month", "6 Month", "Year"];
 		now = new Date().getTime();
 		now = now + 3*60*60*1000;
 		todayStart = now - now % dayLenghtInMs;
@@ -84,44 +84,15 @@ function genLists(){
 		monthEnd = todayStart + 31 * dayLenghtInMs;
 		_3monthEnd = todayStart + 3 * 31 * dayLenghtInMs;
 		_6monthEnd = todayStart + 6 * 31 * dayLenghtInMs;
+		yearEnd = todayStart + 12 * 31 * dayLenghtInMs;
+
 		timings["Today"] = {"start":yesterStart, "end":tomorrowStart};
 		timings["Tomorrow"] = {"start":tomorrowStart, "end":tomorrowEnd};
 		timings["Week"] = {"start":tomorrowEnd, "end":weekEnd};
 		timings["Month"] = {"start":weekEnd, "end":monthEnd};
 		timings["3 Month"] = {"start":monthEnd, "end":_3monthEnd};
 		timings["6 Month"] = {"start":_3monthEnd, "end":_6monthEnd};
-
-		secTimings["Today"] = {"start":thisMonday, "end":thisTuesday};
-		secTimings["Tomorrow"] = {"start":thisTuesday, "end":thisTuesdayEnd};
-		secTimings["Week"] = {"start":0, "end":0};
-		secTimings["Month"] = {"start":0, "end":0};
-		secTimings["3 Month"] = {"start":0, "end":0};
-		secTimings["6 Month"] = {"start":0, "end":0};
-	} else if (board === "Work") {
-		requiredLists = requiredLists = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
-		now = new Date().getTime();
-		now = now + 3*60*60 *1000;
-		thisMonday = mondayStart;
-		while(thisMonday + dayLenghtInMs < now){
-			thisMonday = thisMonday + weekLengthInMs;
-		}
-		thisTuesday = thisMonday + dayLenghtInMs;
-		thisWednesday = thisTuesday + dayLenghtInMs;
-		thisThursday = thisWednesday + dayLenghtInMs;
-		thisFriday = thisThursday + dayLenghtInMs;
-		thisFridayEnd = thisFriday + dayLenghtInMs;
-
-		timings["Monday"] = {"start":thisMonday, "end":thisTuesday};
-		timings["Tuesday"] = {"start":thisTuesday, "end":thisWednesday};
-		timings["Wednesday"] = {"start":thisWednesday, "end":thisThursday};
-		timings["Thursday"] = {"start":thisThursday, "end":thisFriday};
-		timings["Friday"] = {"start":thisFriday, "end":thisFridayEnd};
-
-		secTimings["Monday"] = {"start":0, "end":0};
-		secTimings["Tuesday"] = {"start":0, "end":0};
-		secTimings["Wednesday"] = {"start":0, "end":0};
-		secTimings["Thursday"] = {"start":0, "end":0};
-		secTimings["Friday"] = {"start":0, "end":0};
+		timings["Year"] = {"start":_6monthEnd, "end":yearEnd};
 	}
 }
 asserts["Check lists with time req and enrich lists with pomodoro ticks"] = function(lists){
@@ -225,8 +196,7 @@ asserts["check * for date. want everything that is in today to be moved to today
 	for(l in requiredLists){
 		name = requiredLists[l];
 		if(newFunc(finalLists[name], timings[name].start, timings[name].end, name) === false)
-			//if(newFunc(finalLists[name], secTimings[name].start, secTimings[name].end, name) === false)
-				return false;
+			return false;
 	}
 	return true;
 }
@@ -234,13 +204,11 @@ asserts["check * for date. want everything that is in today to be moved to today
 
 asserts["check today is sane @time"] = function(){
 	console.log("check today is sane @time");
-	if(board === "Grow"){
-		Object.assign(finalLists["Week"].cards, finalLists["Today"].cards);
-		Object.assign(finalLists["Week"].cards, finalLists["Tomorrow"].cards);
-		Object.assign(finalLists["Month"].cards, finalLists["Week"].cards);
-		Object.assign(finalLists["3 Month"].cards, finalLists["Month"].cards);
-		Object.assign(finalLists["6 Month"].cards, finalLists["3 Month"].cards);
-	}
+	Object.assign(finalLists["Week"].cards, finalLists["Today"].cards);
+	Object.assign(finalLists["Week"].cards, finalLists["Tomorrow"].cards);
+	Object.assign(finalLists["Month"].cards, finalLists["Week"].cards);
+	Object.assign(finalLists["3 Month"].cards, finalLists["Month"].cards);
+	Object.assign(finalLists["6 Month"].cards, finalLists["3 Month"].cards);
 	for(l in requiredLists){
 		name = requiredLists[l];
 		if( parseTasks(name, finalLists[name]) === false ){
