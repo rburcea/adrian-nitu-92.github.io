@@ -38,13 +38,13 @@ function getAnnotedTags(lists){
 
 asserts["Check lists with no time req"] = function(lists){
 	console.log("Check lists with no time req");
-	requiredLists = ["Done", "Inbox"]
+	var requiredLists = ["Done", "Inbox"]
 	listTags = getAnnotedTags(lists);
 	for( r in requiredLists ){
 		rl = requiredLists[r];
 		var found = false;
 		for( l in listTags ){
-			lt = listTags[l].tags;
+			var lt = listTags[l].tags;
 			if(lt.indexOf(rl) >= 0){
 				found = true;
 				break;
@@ -58,42 +58,34 @@ asserts["Check lists with no time req"] = function(lists){
 	console.log("passed!");
 	return true;
 }
-finalLists = {}
 function genLists(){
-	requiredLists = [];
 	timings = {};
-	secTimings = {};
 	dayLenghtInMs = (1000 * 60 * 60 * 24);
 	weekLengthInMs = (dayLenghtInMs * 7);
-	mondayStart = 1476640521739;
-	if(board === "Grow"){
-		requiredLists = ["Today", "Tomorrow", "Week", "Month", "3 Month", "6 Month", "Year"];
-		now = new Date().getTime();
-		now = now + 3*60*60*1000;
-		todayStart = now - now % dayLenghtInMs;
-		yesterStart = todayStart - dayLenghtInMs;
-		tomorrowStart = todayStart + dayLenghtInMs;
-		thisMonday = mondayStart;
-		while(thisMonday + dayLenghtInMs < now){
-			thisMonday = thisMonday + weekLengthInMs;
-		}
-		thisTuesday = thisMonday + dayLenghtInMs;
-		tomorrowEnd = tomorrowStart + dayLenghtInMs;
-		thisTuesdayEnd = thisTuesday + dayLenghtInMs;
-		weekEnd = todayStart + 8 * dayLenghtInMs;
-		monthEnd = todayStart + 31 * dayLenghtInMs;
-		_3monthEnd = todayStart + 3 * 31 * dayLenghtInMs;
-		_6monthEnd = todayStart + 6 * 31 * dayLenghtInMs;
-		yearEnd = todayStart + 12 * 31 * dayLenghtInMs;
+	requiredLists = ["Today", "Tomorrow", "Week","Next Work Week", "Month", "3 Month", "6 Month", "Year", "3 Year"];
+	prevMoment = {"Today":"Today", "Tomorrow":"Today", "Week":"Tomorrow","Next Work Week":"Today", "Month":"Week", "3 Month":"Month", "6 Month":"3 Month", "Year":"6 Month", "3 Year":"Year"};
+	now = new Date().getTime();
+	now = now + 4*60*60*1000; // make the day start at 10 PM, yesterday. We need two extra hours for the timezone setting
+	todayStart = now - now % dayLenghtInMs;
+	yesterStart = todayStart - dayLenghtInMs;
+	tomorrowStart = todayStart + dayLenghtInMs;
+	tomorrowEnd = tomorrowStart + dayLenghtInMs;
+	weekEnd = todayStart + 8 * dayLenghtInMs;
+	monthEnd = todayStart + 31 * dayLenghtInMs;
+	_3monthEnd = todayStart + 3 * 31 * dayLenghtInMs;
+	_6monthEnd = todayStart + 6 * 31 * dayLenghtInMs;
+	yearEnd = todayStart + 12 * 31 * dayLenghtInMs;
+	_3yearEnd = todayStart + 3 * 12 * 31 * dayLenghtInMs;
 
-		timings["Today"] = {"start":yesterStart, "end":tomorrowStart};
-		timings["Tomorrow"] = {"start":tomorrowStart, "end":tomorrowEnd};
-		timings["Week"] = {"start":tomorrowEnd, "end":weekEnd};
-		timings["Month"] = {"start":weekEnd, "end":monthEnd};
-		timings["3 Month"] = {"start":monthEnd, "end":_3monthEnd};
-		timings["6 Month"] = {"start":_3monthEnd, "end":_6monthEnd};
-		timings["Year"] = {"start":_6monthEnd, "end":yearEnd};
-	}
+	timings["Today"] = {"start":yesterStart, "end":tomorrowStart};
+	timings["Tomorrow"] = {"start":tomorrowStart, "end":tomorrowEnd};
+	timings["Week"] = {"start":tomorrowEnd, "end":weekEnd};
+	timings["Next Work Week"] = {"start":0, "end":monthEnd};
+	timings["Month"] = {"start":weekEnd, "end":monthEnd};
+	timings["3 Month"] = {"start":monthEnd, "end":_3monthEnd};
+	timings["6 Month"] = {"start":_3monthEnd, "end":_6monthEnd};
+	timings["Year"] = {"start":_6monthEnd, "end":yearEnd};
+	timings["3 Year"] = {"start":yearEnd, "end":_3yearEnd};
 }
 asserts["Check lists with time req and enrich lists with pomodoro ticks"] = function(lists){
 	// breaking "do one thing" policy
@@ -110,7 +102,7 @@ asserts["Check lists with time req and enrich lists with pomodoro ticks"] = func
 				found = found + 1;
 				// convert to pomodoro ticks
 				listTags[l].backLink.ticks = number/0.5;
-			} 
+			}
 			if(requiredLists.indexOf(tag) >= 0){
 				found = found + 1;
 			}
@@ -133,64 +125,27 @@ asserts["Check lists with time req and enrich lists with pomodoro ticks"] = func
 	return true;
 }
 
-function parseTasks(name, list){
-	if(list == undefined){
-		return true;
-	}
-	cards = list.cards;
-	sumTicks = 0;
-	convert = {"30 minute task" : 1, "Hour task": 2, "2 hour task": 4, "3 hour task":6, "5 hour task":10, "5 minute task" : 0.5, "8 hour task":16, "13 hour task":26, "Day":16, "Week":5*16, "Month":4*5*16, "3 Month":3*4*5*16, "6 Month":6*4*5*16, "Year":12*4*5*16, "Habbit":0};
-	for(c in cards){
-		card = cards[c];
-		labels = card.labels;
-		found = 0;
-		ln = undefined;
-		for(i in labels){
-			label = labels[i];
-			ln = label.name;
-			tick = convert[label.name];
-			if(tick != undefined){
-				sumTicks = sumTicks + tick;
-				found = found + 1;
-			}
-		}
-		if(found != 1){
-			globalError = "Card " + JSON.stringify(card) + " is not labeled correctly <br/>"
-			return false;
-		}
-		if(card.due == undefined && ln !== "Habbit"){
-			globalError = "Card " + JSON.stringify(card) + " doens't have a due date";
-			return false;
-		}
-	}
-	list.load = parseInt(String(100*(sumTicks / list.ticks)));
-	if(list.load > 75){
-		globalWarning = globalWarning + "Seems you are kinda overbooked for " + name + ".<br/>Please reschedule! Drop at least: " + (sumTicks - 0.75*list.ticks)  + "<br/>";
-	}
-	if(list.load > 100){
-		globalError = "Seems you are kinda overbooked for " + name + ".<br/>Please reschedule!<br/>Drop at least: " + (sumTicks - list.ticks) ;
-		return false;
-	}
-	globalWarning = globalWarning + name + "'s success rate = " + (100-list.load) + "%.<br/>";
-	return true;
-}
 var newFunc = function(l, start, end, name){
 	cards = l.cards;
 	for(c in cards){
 		card = cards[c];
 		due = new Date(card.due).getTime();
-		if(!((due > start) || card.labels[0].name === "Habbit")){
-			state = due + " < " + start;
-			globalError = "Card " + card.name + ": " + card.url + " is not dated correctly. It should be " +name+ ", but it is " + state + ".<br/>"
-			return false;
+		if(due < start){
+			if(name == "Today"){
+				continue;
+			}
+			prevListName = prevMoment[name];
+			prevList = finalLists[prevListName];
+			Trello.put('/cards/' + card.id + "/idList",{"value":prevList.id}, function(v){console.log(v);}, function(v){console.log(v);});
+
 		}
-		if(!((due < end) || card.labels[0].name === "Habbit")){
-			state = due + " > " + end;
-			globalWarning = globalWarning + "Card " + card.name + ": " + card.url + " is not dated correctly. It should be " +name+ ", but it is " + state + ".<br/>"
+		if(due > end){
+			globalWarning = globalWarning + "Card " + card.name + ": " + card.url + " is not dated correctly. It is scheduled for <b>" +name+ "</b>, but it can be completed later.<br/>";
 		}
 	}
 	return true;
 }
+
 asserts["check * for date. want everything that is in today to be moved to today, or to be moved to inbox?"] = function(){
 	console.log("check * for date. want everything that is in today to be moved to today, or to be moved to inbox?");
 	for(l in requiredLists){
@@ -201,14 +156,126 @@ asserts["check * for date. want everything that is in today to be moved to today
 	return true;
 }
 
-
+function parseTasks(name, list){
+	if(list == undefined){
+		return true;
+	}
+	cards = list.cards;
+	sumTicks = 0;
+	convert = {"30 minute task" : 1, "Hour task": 2, "2 hour task": 4, "3 hour task":6, "5 hour task":10, "8 hour task":16, "13 hour task":26, "Week":5*16, "Month":4*5*16, "3 Month":3*4*5*16, "6 Month":6*4*5*16, "Year":12*4*5*16, "Habbit":0};
+	for(c in cards){
+		card = cards[c];
+		labels = card.labels;
+		found = 0;
+		ln = undefined;
+		card.tick = 0.5;
+		card.size = 0.5;
+		for(i in labels){
+			label = labels[i];
+			ln = label.name;
+			if(ln == "MIT"){
+				card.size = 99999 +1;
+				break;
+			}
+			tick = convert[label.name];
+			if(tick != undefined){
+				found = found + 1;
+				card.tick = tick;
+				card.size = tick;
+				if(tick === 0)
+					card.size = 99999;
+			}
+		}
+		if(found > 1){
+			globalError = "Card " + JSON.stringify(card) + " is not labeled correctly <br/>";
+			return false;
+		} else {
+			sumTicks = sumTicks + card.tick;
+		}
+	}
+	list.load = parseInt(String(100*(sumTicks / list.ticks)));
+	if(list.load > 75){
+		globalWarning = globalWarning + "Seems you are kinda overbooked for " + name + ".<br/>Please reschedule! Drop at least: " + (sumTicks - 0.75*list.ticks)/2  + " hours <br/>";
+	}
+	if(list.load > 100){
+		globalError = globalWarning + "Seems you are overbooked for " + name + ".<br/>Please reschedule!<br/>Drop at least: " + (sumTicks - list.ticks)/2 + " hours <br/>" ;
+		return false;
+	}
+	globalWarning = globalWarning + name + "'s success rate = <b>" + (100-list.load) + "%</b>.<br/>";
+	return true;
+}
+asserts["sort"] = function(){
+	console.log("sort");
+	for(l in requiredLists){
+		name = requiredLists[l];
+		parseTasks(name, finalLists[name]);
+	}
+	globalWarning = globalError = "";
+	for(l in requiredLists){
+		name = requiredLists[l];
+		console.log(name);
+		list = finalLists[name];
+		cards = list.cards;
+		arrayCards = Object.keys(cards).map(function (key) { return cards[key]; });
+		arraySortedByPos = arrayCards.slice(0);
+		arraySortedByPos.sort(function(a,b){return a.pos - b.pos;});
+		arraySortedBySize = arrayCards.slice(0);
+		arraySortedBySize.sort(function(a,b){if(a.size == b.size) return new Date(a.due).getTime() - new Date(b.due).getTime(); return b.size - a.size;});
+		if((arraySortedByPos.map(function(el){return el.size;}).toString()) != (arraySortedBySize.map(function(el){return el.size;}).toString())){
+			console.log(name + " is not sorted!");
+			incrementator = 0;
+			var doOver = function(){
+				if(incrementator <  arraySortedByPos.length){
+					card = arraySortedBySize[incrementator];
+					console.log("Sorting");
+					console.log(card.name + " " + card.size);
+					Trello.put('/cards/' + card.id + "/pos",{"value":"bottom"},
+						doOver, function(v){console.log(v);});
+					incrementator = incrementator +1;
+				}
+			}
+			doOver();
+			return true;
+		}
+	}
+	return true;
+}
+asserts["Test that today has a MIT task"] = function(){
+	console.log("Test that today has a MIT task");
+	cards = finalLists["Today"].cards;
+	ret = false;
+	globalError = "You must have at least one MIT card for today! <br/>";
+	for(c in cards){
+		card = cards[c];
+		labels = card.labels;
+		for(i in labels){
+			label = labels[i];
+			ln = label.name;
+			if(ln === "MIT"){
+				if(ret){
+					globalError = "You must have just ONE MIT card for today! <br/>";
+					return false;
+				}
+				ret = true;
+				MITcard = card;
+			}
+		}
+	}
+	if(ret)
+		Trello.put('/cards/' + MITcard.id + "/pos",{"value":"top"},
+							function(v){console.log(v);}, function(v){console.log(v);});
+	return ret;
+}
 asserts["check today is sane @time"] = function(){
 	console.log("check today is sane @time");
 	Object.assign(finalLists["Week"].cards, finalLists["Today"].cards);
 	Object.assign(finalLists["Week"].cards, finalLists["Tomorrow"].cards);
+	Object.assign(finalLists["Week"].cards, finalLists["Next Work Week"].cards);
 	Object.assign(finalLists["Month"].cards, finalLists["Week"].cards);
 	Object.assign(finalLists["3 Month"].cards, finalLists["Month"].cards);
 	Object.assign(finalLists["6 Month"].cards, finalLists["3 Month"].cards);
+	Object.assign(finalLists["Year"].cards, finalLists["6 Month"].cards);
+	Object.assign(finalLists["3 Year"].cards, finalLists["Year"].cards);
 	for(l in requiredLists){
 		name = requiredLists[l];
 		if( parseTasks(name, finalLists[name]) === false ){
@@ -217,6 +284,8 @@ asserts["check today is sane @time"] = function(){
 	}
 	return true;
 }
+
+
 var done = function(lists){
 	document.getElementById("p1").innerHTML = "";
 	counter = counter + 1;
@@ -233,8 +302,9 @@ var done = function(lists){
 		}
 	}
 }
-
+finalLists = {}
 var populateLists = function(lists){
+	finalLists = {}
 	var curry = function(listID){
 		return function(answer) {
 			cards = {};
@@ -281,9 +351,15 @@ var authenticationSuccess = function() {
 		document.getElementById("p1").innerHTML = "";
 		for( i in boards){
 			item = boards[i];
+			if(item.name === "Grow"){
+				gItemID = item.id;
+				gItemName = item.name;
+				boardSelect(gItemID, gItemName);
+			}
+			/*
 			document.getElementById("p1").innerHTML = document.getElementById("p1").innerHTML +
 			"<button onclick=\"boardSelect('"+item.id+"', '"+item.name+"')\">" +
-			item.name + "</button><br/>";
+			item.name + "</button><br/>";*/
 		}
 	};
 
@@ -293,6 +369,9 @@ var authenticationSuccess = function() {
 
 	Trello.get('/member/me/boards', success, error);
 };
+window.onfocus = function(){
+	location.reload();
+}
 var authenticationFailure = function() { alert("Failed authentication"); };
 
 Trello.authorize({
