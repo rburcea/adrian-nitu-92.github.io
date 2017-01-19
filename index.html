@@ -13,39 +13,16 @@ globalWarning = "";
 globalError = "";
 asserts = {};
 board = undefined;
-Object.values = obj => Object.keys(obj).map(key => obj[key]);
-
-function extractTags(string){
-	ret = string.split("--");
-	ret = ret.map(function(s){return s.trim();});
-	return ret;
-};
-
-function swap(obj){
-  var ret = {};
-  for(var key in obj){
-    ret[obj[key].name] = obj[key];
-  }
-  return ret;
-}
-
-function getAnnotedTags(lists){
-	listNames = swap(lists);
-	listTags = {};
-	listTags = Object.keys(listNames).map(function(i){return {tags:extractTags(i),backLink:listNames[i]};});
-	return listTags;
-}
 
 asserts["Check lists with no time req"] = function(lists){
 	console.log("Check lists with no time req");
 	var requiredLists = ["Done", "Inbox"]
-	listTags = getAnnotedTags(lists);
 	for( r in requiredLists ){
 		rl = requiredLists[r];
 		var found = false;
-		for( l in listTags ){
-			var lt = listTags[l].tags;
-			if(lt.indexOf(rl) >= 0){
+		for( l in lists ){
+			var lt = lists[l];
+			if(lt.name == rl){
 				found = true;
 				break;
 			}
@@ -58,73 +35,6 @@ asserts["Check lists with no time req"] = function(lists){
 	console.log("passed!");
 	return true;
 }
-function genLists(){
-	timings = {};
-	dayLenghtInMs = (1000 * 60 * 60 * 24);
-	weekLengthInMs = (dayLenghtInMs * 7);
-	requiredLists = ["Today", "Tomorrow", "Week","Next Work Week", "Month", "3 Month", "6 Month", "Year", "3 Year"];
-	prevMoment = {"Today":"Today", "Tomorrow":"Today", "Week":"Tomorrow","Next Work Week":"Today", "Month":"Week", "3 Month":"Month", "6 Month":"3 Month", "Year":"6 Month", "3 Year":"Year"};
-	now = new Date().getTime();
-	now = now + 4*60*60*1000; // make the day start at 10 PM, yesterday. We need two extra hours for the timezone setting
-	todayStart = now - now % dayLenghtInMs;
-	yesterStart = todayStart - dayLenghtInMs;
-	tomorrowStart = todayStart + dayLenghtInMs;
-	tomorrowEnd = tomorrowStart + dayLenghtInMs;
-	weekEnd = todayStart + 8 * dayLenghtInMs;
-	monthEnd = todayStart + 31 * dayLenghtInMs;
-	_3monthEnd = todayStart + 3 * 31 * dayLenghtInMs;
-	_6monthEnd = todayStart + 6 * 31 * dayLenghtInMs;
-	yearEnd = todayStart + 12 * 31 * dayLenghtInMs;
-	_3yearEnd = todayStart + 3 * 12 * 31 * dayLenghtInMs;
-
-	timings["Today"] = {"start":yesterStart, "end":tomorrowStart};
-	timings["Tomorrow"] = {"start":tomorrowStart, "end":tomorrowEnd};
-	timings["Week"] = {"start":tomorrowEnd, "end":weekEnd};
-	timings["Next Work Week"] = {"start":0, "end":monthEnd};
-	timings["Month"] = {"start":weekEnd, "end":monthEnd};
-	timings["3 Month"] = {"start":monthEnd, "end":_3monthEnd};
-	timings["6 Month"] = {"start":_3monthEnd, "end":_6monthEnd};
-	timings["Year"] = {"start":_6monthEnd, "end":yearEnd};
-	timings["3 Year"] = {"start":yearEnd, "end":_3yearEnd};
-}
-asserts["Check lists with time req and enrich lists with pomodoro ticks"] = function(lists){
-	// breaking "do one thing" policy
-	console.log("Check lists with no time req and enrich lists with pomodoro ticks");
-	genLists();
-	listTags = getAnnotedTags(lists);
-	for(l in listTags){
-		var found = 0;
-		lt = listTags[l].tags;
-		for(t in lt){
-			tag = lt[t];
-			number = parseFloat(tag);
-			if(number === number && tag == number + "h"){
-				found = found + 1;
-				// convert to pomodoro ticks
-				listTags[l].backLink.ticks = number/0.5;
-			}
-			if(requiredLists.indexOf(tag) >= 0){
-				found = found + 1;
-			}
-		}
-		if(found == 1){
-			globalError = "Lists must have a tag that says how long they are allowed to stretch!<br/>" + JSON.stringify(lt);
-			return false;
-		}
-	}
-	for(l in listTags){
-		lt = listTags[l].tags;
-		for(t in lt){
-			tag = lt[t];
-			if(requiredLists.indexOf(tag) >= 0){
-				finalLists[tag] = listTags[l].backLink
-			}
-		}
-	}
-	console.log("passed!");
-	return true;
-}
-
 var newFunc = function(l, start, end, name){
 	cards = l.cards;
 	for(c in cards){
@@ -135,7 +45,7 @@ var newFunc = function(l, start, end, name){
 				continue;
 			}
 			prevListName = prevMoment[name];
-			prevList = finalLists[prevListName];
+			prevList = lists[prevListName];
 			Trello.put('/cards/' + card.id + "/idList",{"value":prevList.id}, function(v){console.log(v);}, function(v){console.log(v);});
 
 		}
@@ -150,26 +60,26 @@ asserts["check * for date. want everything that is in today to be moved to today
 	console.log("check * for date. want everything that is in today to be moved to today, or to be moved to inbox?");
 	for(l in requiredLists){
 		name = requiredLists[l];
-		if(newFunc(finalLists[name], timings[name].start, timings[name].end, name) === false)
+		if(newFunc(lists[name], lists[name].start, lists[name].end, name) === false)
 			return false;
 	}
 	return true;
 }
 
-function parseTasks(name, list){
+function parseTasks(list){
 	if(list == undefined){
 		return true;
 	}
 	cards = list.cards;
 	sumTicks = 0;
-	convert = {"30 minute task" : 1, "Hour task": 2, "2 hour task": 4, "3 hour task":6, "5 hour task":10, "8 hour task":16, "13 hour task":26, "Week":5*16, "Month":4*5*16, "3 Month":3*4*5*16, "6 Month":6*4*5*16, "Year":12*4*5*16, "Habbit":0};
+	convert = {"30 minute task" : 0.5, "Hour task": 1, "2 hour task": 2, "3 hour task":3, "5 hour task":5, "8 hour task":8, "13 hour task":13, "Week":5*8, "Month":4*5*8, "3 Month":3*4*5*8, "6 Month":6*4*5*8, "Year":12*4*5*8, "Habbit":0};
 	for(c in cards){
 		card = cards[c];
 		labels = card.labels;
 		found = 0;
 		ln = undefined;
-		card.tick = 0.5;
-		card.size = 0.5;
+		card.tick = 0.25;
+		card.size = 0.25;
 		for(i in labels){
 			label = labels[i];
 			ln = label.name;
@@ -194,27 +104,29 @@ function parseTasks(name, list){
 		}
 	}
 	list.load = parseInt(String(100*(sumTicks / list.ticks)));
-	if(list.load > 75){
-		globalWarning = globalWarning + "Seems you are kinda overbooked for " + name + ".<br/>Please reschedule! Drop at least: " + (sumTicks - 0.75*list.ticks)/2  + " hours <br/>";
-	}
-	if(list.load > 100){
-		globalError = globalWarning + "Seems you are overbooked for " + name + ".<br/>Please reschedule!<br/>Drop at least: " + (sumTicks - list.ticks)/2 + " hours <br/>" ;
+	console.log(name + ":" + sumTicks+"/"+list.ticks);
+	if(list.load > 125){
+		globalError = globalWarning + "Seems you are overbooked for " + list.name + ".<br/>Please reschedule!<br/>Drop at least: " + (sumTicks - list.ticks) + " hours <br/>" ;
 		return false;
 	}
-	globalWarning = globalWarning + name + "'s success rate = <b>" + (100-list.load) + "%</b>.<br/>";
+	if(list.load > 100){
+		globalWarning = globalWarning + "Seems you are kinda overbooked for <b>" + list.name + "</b>.<br/>Please reschedule! Drop at least: <b>" + (sumTicks - list.ticks)  + "</b> hours <br/>";
+	} else {
+		globalWarning = globalWarning + "<b>" + list.name + "</b>'s success rate = <b>" + (100-list.load) + "%</b>.<br/>";
+	}
 	return true;
 }
 asserts["sort"] = function(){
 	console.log("sort");
 	for(l in requiredLists){
 		name = requiredLists[l];
-		parseTasks(name, finalLists[name]);
+		parseTasks(lists[name]);
 	}
 	globalWarning = globalError = "";
 	for(l in requiredLists){
 		name = requiredLists[l];
 		console.log(name);
-		list = finalLists[name];
+		list = lists[name];
 		cards = list.cards;
 		arrayCards = Object.keys(cards).map(function (key) { return cards[key]; });
 		arraySortedByPos = arrayCards.slice(0);
@@ -242,7 +154,7 @@ asserts["sort"] = function(){
 }
 asserts["Test that today has a MIT task"] = function(){
 	console.log("Test that today has a MIT task");
-	cards = finalLists["Today"].cards;
+	cards = lists["Today"].cards;
 	ret = false;
 	globalError = "You must have at least one MIT card for today! <br/>";
 	for(c in cards){
@@ -268,17 +180,17 @@ asserts["Test that today has a MIT task"] = function(){
 }
 asserts["check today is sane @time"] = function(){
 	console.log("check today is sane @time");
-	Object.assign(finalLists["Week"].cards, finalLists["Today"].cards);
-	Object.assign(finalLists["Week"].cards, finalLists["Tomorrow"].cards);
-	Object.assign(finalLists["Week"].cards, finalLists["Next Work Week"].cards);
-	Object.assign(finalLists["Month"].cards, finalLists["Week"].cards);
-	Object.assign(finalLists["3 Month"].cards, finalLists["Month"].cards);
-	Object.assign(finalLists["6 Month"].cards, finalLists["3 Month"].cards);
-	Object.assign(finalLists["Year"].cards, finalLists["6 Month"].cards);
-	Object.assign(finalLists["3 Year"].cards, finalLists["Year"].cards);
+	Object.assign(lists["Week"].cards, lists["Today"].cards);
+	Object.assign(lists["Week"].cards, lists["Tomorrow"].cards);
+	Object.assign(lists["Week"].cards, lists["Next Work Week"].cards);
+	Object.assign(lists["Month"].cards, lists["Week"].cards);
+	Object.assign(lists["3 Month"].cards, lists["Month"].cards);
+	Object.assign(lists["6 Month"].cards, lists["3 Month"].cards);
+	Object.assign(lists["Year"].cards, lists["6 Month"].cards);
+	Object.assign(lists["3 Year"].cards, lists["Year"].cards);
 	for(l in requiredLists){
 		name = requiredLists[l];
-		if( parseTasks(name, finalLists[name]) === false ){
+		if( parseTasks(lists[name]) === false ){
 			return false;
 		}
 	}
@@ -286,7 +198,7 @@ asserts["check today is sane @time"] = function(){
 }
 
 
-var done = function(lists){
+var done = function(){
 	document.getElementById("p1").innerHTML = "";
 	counter = counter + 1;
 	if(counter >= Object.keys(lists).length ){
@@ -302,18 +214,16 @@ var done = function(lists){
 		}
 	}
 }
-finalLists = {}
-var populateLists = function(lists){
-	finalLists = {}
-	var curry = function(listID){
+var populateLists = function(){
+	var curry = function(listName){
 		return function(answer) {
 			cards = {};
 			for(i in answer){
 				card = answer[i];
 				cards[card.id] = card;
 			}
-			lists[listID]["cards"] = cards;
-			done(lists);
+			lists[listName].cards = cards;
+			done();
 		};
 	};
 
@@ -321,8 +231,9 @@ var populateLists = function(lists){
 	  console.log(errorMsg);
 	};
 
-	for(listID in lists){
-		Trello.get('/lists/'+ listID +'/cards', curry(listID), error);
+	for(listName in lists){
+		listID = lists[listName].id;
+		Trello.get('/lists/'+ listID +'/cards', curry(listName), error);
 	}
 }
 
@@ -330,12 +241,13 @@ var boardSelect = function(boardID, boardName){
 	board = boardName;
 	var success = function(answer) {
 		document.getElementById("p1").innerHTML = "";
-		var lists = {};
 		for(i in answer){
 			list = answer[i];
-			lists[list.id] = list;
+			list.backlink = list;
+			Object.assign(list, lists[list.name]);
+			lists[list.name] = list;
 		}
-		populateLists(lists);
+		populateLists();
 	};
 
 	var error = function(errorMsg) {
@@ -374,16 +286,49 @@ window.onfocus = function(){
 }
 var authenticationFailure = function() { alert("Failed authentication"); };
 
-Trello.authorize({
-  type: 'popup',
-  name: 'Getting Started Application',
-  scope: {
-    read: 'true',
-    write: 'true' },
-  expiration: 'never',
-  success: authenticationSuccess,
-  error: authenticationFailure
-});
+function init(){
+	Trello.authorize({
+	  type: 'popup',
+	  name: 'Getting Started Application',
+	  scope: {
+	    read: 'true',
+	    write: 'true' },
+	  expiration: 'never',
+	  success: authenticationSuccess,
+	  error: authenticationFailure
+	});
+	lists = {}
+	dayLenghtInMs = (1000 * 60 * 60 * 24);
+	weekLengthInMs = (dayLenghtInMs * 7);
+	requiredLists = ["Today", "Tomorrow", "Week","Next Work Week", "Month", "3 Month", "6 Month", "Year", "3 Year"];
+	prevMoment = {"Today":"Today", "Tomorrow":"Today", "Week":"Tomorrow","Next Work Week":"Today", "Month":"Week", "3 Month":"Month", "6 Month":"3 Month", "Year":"6 Month", "3 Year":"Year"};
+	now = new Date().getTime();
+	now = now + 4*60*60*1000; // make the day start at 10 PM, yesterday. We need two extra hours for the timezone setting
+	todayStart = now - now % dayLenghtInMs;
+	yesterStart = todayStart - dayLenghtInMs;
+	tomorrowStart = todayStart + dayLenghtInMs;
+	tomorrowEnd = tomorrowStart + dayLenghtInMs;
+	weekEnd = todayStart + 8 * dayLenghtInMs;
+	monthEnd = todayStart + 31 * dayLenghtInMs;
+	_3monthEnd = todayStart + 3 * 31 * dayLenghtInMs;
+	_6monthEnd = todayStart + 6 * 31 * dayLenghtInMs;
+	yearEnd = todayStart + 12 * 31 * dayLenghtInMs;
+	_3yearEnd = todayStart + 3 * 12 * 31 * dayLenghtInMs;
+	console.log(lists);
+
+	baseDay = 12;
+
+	lists["Today"] = {"start":yesterStart, "end":tomorrowStart,"ticks":baseDay};
+	lists["Tomorrow"] = {"start":tomorrowStart, "end":tomorrowEnd,"ticks":baseDay};
+	lists["Week"] = {"start":tomorrowEnd, "end":weekEnd,"ticks":baseDay * 8 - baseDay};
+	lists["Next Work Week"] = {"start":0, "end":monthEnd,"ticks":30};
+	lists["Month"] = {"start":weekEnd, "end":monthEnd,"ticks":lists["Week"].ticks * 4 - lists["Week"].ticks};
+	lists["3 Month"] = {"start":monthEnd, "end":_3monthEnd,"ticks":lists["Month"].ticks * 3 - lists["Week"].ticks};
+	lists["6 Month"] = {"start":_3monthEnd, "end":_6monthEnd,"ticks":lists["3 Month"].ticks * 2 - lists["Week"].ticks};
+	lists["Year"] = {"start":_6monthEnd, "end":yearEnd,"ticks":lists["6 Month"].ticks * 2 - lists["Week"].ticks};
+	lists["3 Year"] = {"start":yearEnd, "end":_3yearEnd,"ticks":lists["Year"].ticks * 3 - lists["Week"].ticks};
+}
+init();
 </script>
 <p id="p1">Hello World!</p>
 </body>
