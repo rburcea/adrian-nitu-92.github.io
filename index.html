@@ -118,13 +118,14 @@ function parseTasks(list){
 }
 asserts["sort"] = function(){
 	console.log("sort");
-	for(l in requiredLists){
-		name = requiredLists[l];
+	reqList = ["Inbox"].concat(requiredLists);
+	for(l in reqList){
+		name = reqList[l];
 		parseTasks(lists[name]);
 	}
 	globalWarning = globalError = "";
-	for(l in requiredLists){
-		name = requiredLists[l];
+	for(l in reqList){
+		name = reqList[l];
 		console.log(name);
 		list = lists[name];
 		cards = list.cards;
