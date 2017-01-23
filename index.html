@@ -323,11 +323,11 @@ function init(){
 	lists["Tomorrow"] = {"start":tomorrowStart, "end":tomorrowEnd,"ticks":baseDay};
 	lists["Week"] = {"start":tomorrowEnd, "end":weekEnd,"ticks":baseDay * 8 - baseDay};
 	lists["Next Work Week"] = {"start":0, "end":monthEnd,"ticks":30};
-	lists["Month"] = {"start":weekEnd, "end":monthEnd,"ticks":lists["Week"].ticks * 4 - lists["Week"].ticks};
-	lists["3 Month"] = {"start":monthEnd, "end":_3monthEnd,"ticks":lists["Month"].ticks * 3 - lists["Week"].ticks};
-	lists["6 Month"] = {"start":_3monthEnd, "end":_6monthEnd,"ticks":lists["3 Month"].ticks * 2 - lists["Week"].ticks};
-	lists["Year"] = {"start":_6monthEnd, "end":yearEnd,"ticks":lists["6 Month"].ticks * 2 - lists["Week"].ticks};
-	lists["3 Year"] = {"start":yearEnd, "end":_3yearEnd,"ticks":lists["Year"].ticks * 3 - lists["Week"].ticks};
+	lists["Month"] = {"start":weekEnd, "end":monthEnd,"ticks":lists["Week"].ticks * 4 - lists["Week"].ticks/2};
+	lists["3 Month"] = {"start":monthEnd, "end":_3monthEnd,"ticks":lists["Month"].ticks * 3 - lists["Week"].ticks/2};
+	lists["6 Month"] = {"start":_3monthEnd, "end":_6monthEnd,"ticks":lists["3 Month"].ticks * 2 - lists["Week"].ticks/2};
+	lists["Year"] = {"start":_6monthEnd, "end":yearEnd,"ticks":lists["6 Month"].ticks * 2 - lists["Week"].ticks/2};
+	lists["3 Year"] = {"start":yearEnd, "end":_3yearEnd,"ticks":lists["Year"].ticks * 3 - lists["Week"].ticks/2};
 }
 init();
 </script>
