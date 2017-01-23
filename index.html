@@ -110,7 +110,7 @@ function parseTasks(list){
 		return false;
 	}
 	if(list.load > 100){
-		globalWarning = globalWarning + "Seems you are kinda overbooked for <b>" + list.name + "</b>.<br/>Please reschedule! Drop at least: <b>" + (sumTicks - list.ticks)  + "</b> hours <br/>";
+		globalWarning = globalWarning + "Seems you are kinda overbooked for <b>" + list.name + "</b>.Please reschedule! Drop at least: <b>" + (sumTicks - list.ticks)  + "</b> hours <br/>";
 	} else {
 		globalWarning = globalWarning + "<b>" + list.name + "</b>'s success rate = <b>" + (100-list.load) + "%</b>.<br/>";
 	}
@@ -194,6 +194,25 @@ asserts["check today is sane @time"] = function(){
 		if( parseTasks(lists[name]) === false ){
 			return false;
 		}
+	}
+	for(i = 0; i < requiredLists.length - 1; i++){
+		name1 = requiredLists[i];
+		name2 = requiredLists[i+1];
+		if(name1 === "Next Work Week"){
+			name1 = "Week";
+		}
+		if(name2 === "Next Work Week"){
+			name2 = "Month";
+		}
+		obj1 = lists[name1];
+		obj2 = lists[name2];
+		if(obj2 === undefined){
+			break;
+		}
+		if(obj1.load < obj2.load){
+			globalWarning = globalWarning + "Seems there is a hump at <b>" + obj2.name + "</b>. This might mean that you might, at some point, be overloading yourself. Please try to solve some MITs from <b>" + obj2.name + "</b>.<br/>";
+		}
+
 	}
 	return true;
 }
