@@ -9,6 +9,7 @@
 <script>
 
 counter = 0; // TODO: no global state please
+moved = false;
 globalWarning = "";
 globalError = "";
 asserts = {};
@@ -47,6 +48,7 @@ var newFunc = function(l, start, end, name){
 			prevListName = prevMoment[name];
 			prevList = lists[prevListName];
 			Trello.put('/cards/' + card.id + "/idList",{"value":prevList.id}, function(v){console.log(v);}, function(v){console.log(v);});
+			moved = true;
 
 		}
 		if(due > end){
@@ -105,7 +107,7 @@ function parseTasks(list){
 	}
 	list.load = parseInt(String(100*(sumTicks / list.ticks)));
 	console.log(name + ":" + sumTicks+"/"+list.ticks);
-	if(list.load > 125){
+	if(list.load > 125 || (list.load > 100 && list.name === "Today")){
 		globalError = globalWarning + "Seems you are overbooked for " + list.name + ".<br/>Please reschedule!<br/>Drop at least: " + (sumTicks - list.ticks) + " hours <br/>" ;
 		return false;
 	}
@@ -138,6 +140,10 @@ asserts["sort"] = function(){
 			console.log(name + " is not sorted!");
 			incrementator = 0;
 			var doOver = function(){
+				if(moved){
+					// dont sort if at least one card has been moved
+					return;
+				}
 				if(incrementator <  arraySortedByPos.length){
 					card = arraySortedBySize[incrementator];
 					console.log("Sorting");
@@ -227,12 +233,11 @@ var done = function(){
 			if(! assert(lists)){
 				document.getElementById("p1").innerHTML = globalError;
 				return;
-			} else {
-				document.getElementById("p1").innerHTML = document.getElementById("p1").innerHTML + globalWarning;
-				globalWarning = "";
 			}
 		}
 	}
+	document.getElementById("p1").innerHTML = document.getElementById("p1").innerHTML + globalWarning;
+	globalWarning = "";
 }
 var populateLists = function(){
 	var curry = function(listName){
@@ -301,12 +306,12 @@ var authenticationSuccess = function() {
 
 	Trello.get('/member/me/boards', success, error);
 };
-window.onfocus = function(){
-	location.reload();
-}
+
 var authenticationFailure = function() { alert("Failed authentication"); };
 
 function init(){
+	moved = false;
+	console.log("v2");
 	Trello.authorize({
 	  type: 'popup',
 	  name: 'Getting Started Application',
@@ -323,8 +328,11 @@ function init(){
 	requiredLists = ["Today", "Tomorrow", "Week","Next Work Week", "Month", "3 Month", "6 Month", "Year", "3 Year"];
 	prevMoment = {"Today":"Today", "Tomorrow":"Today", "Week":"Tomorrow","Next Work Week":"Today", "Month":"Week", "3 Month":"Month", "6 Month":"3 Month", "Year":"6 Month", "3 Year":"Year"};
 	now = new Date().getTime();
-	now = now + 4*60*60*1000; // make the day start at 10 PM, yesterday. We need two extra hours for the timezone setting
+	now = now + (2-5)*60*60*1000; // make the day start at 5 AM, today. We need two extra hours for the timezone setting
+
 	todayStart = now - now % dayLenghtInMs;
+
+	currentHour = ((new Date().getTime()) - todayStart + 2*60*60*1000) / (1000 * 60 * 60);
 	yesterStart = todayStart - dayLenghtInMs;
 	tomorrowStart = todayStart + dayLenghtInMs;
 	tomorrowEnd = tomorrowStart + dayLenghtInMs;
@@ -338,10 +346,10 @@ function init(){
 
 	baseDay = 12;
 
-	lists["Today"] = {"start":yesterStart, "end":tomorrowStart,"ticks":baseDay};
+	lists["Today"] = {"start":yesterStart, "end":tomorrowStart,"ticks":(29 - currentHour)%24};
 	lists["Tomorrow"] = {"start":tomorrowStart, "end":tomorrowEnd,"ticks":baseDay};
 	lists["Week"] = {"start":tomorrowEnd, "end":weekEnd,"ticks":baseDay * 8 - baseDay};
-	lists["Next Work Week"] = {"start":0, "end":monthEnd,"ticks":30};
+	lists["Next Work Week"] = {"start":0, "end":monthEnd,"ticks":32};
 	lists["Month"] = {"start":weekEnd, "end":monthEnd,"ticks":lists["Week"].ticks * 4 - lists["Week"].ticks/2};
 	lists["3 Month"] = {"start":monthEnd, "end":_3monthEnd,"ticks":lists["Month"].ticks * 3 - lists["Week"].ticks/2};
 	lists["6 Month"] = {"start":_3monthEnd, "end":_6monthEnd,"ticks":lists["3 Month"].ticks * 2 - lists["Week"].ticks/2};
@@ -349,6 +357,7 @@ function init(){
 	lists["3 Year"] = {"start":yearEnd, "end":_3yearEnd,"ticks":lists["Year"].ticks * 3 - lists["Week"].ticks/2};
 }
 init();
+window.onfocus = init;
 </script>
 <p id="p1">Hello World!</p>
 </body>
