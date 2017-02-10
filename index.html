@@ -37,16 +37,19 @@ asserts["Check lists with no time req"] = function(lists){
 	return true;
 }
 var newFunc = function(l, start, end, name){
+	prevListName = prevMoment[name];
+	prevList = lists[prevListName];
+	if(name === prevListName ){
+		return;
+	}
+	if(name == "Today"){
+		return;
+	}
 	cards = l.cards;
 	for(c in cards){
 		card = cards[c];
 		due = new Date(card.due).getTime();
 		if(due < start){
-			if(name == "Today"){
-				continue;
-			}
-			prevListName = prevMoment[name];
-			prevList = lists[prevListName];
 			Trello.put('/cards/' + card.id + "/idList",{"value":prevList.id}, function(v){console.log(v);}, function(v){console.log(v);});
 			moved = true;
 
