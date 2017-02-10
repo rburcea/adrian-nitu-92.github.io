@@ -326,7 +326,7 @@ function init(){
 	dayLenghtInMs = (1000 * 60 * 60 * 24);
 	weekLengthInMs = (dayLenghtInMs * 7);
 	requiredLists = ["Today", "Tomorrow", "Week","Next Work Week", "Month", "3 Month", "6 Month", "Year", "3 Year"];
-	prevMoment = {"Today":"Today", "Tomorrow":"Today", "Week":"Tomorrow","Next Work Week":"Today", "Month":"Week", "3 Month":"Month", "6 Month":"3 Month", "Year":"6 Month", "3 Year":"Year"};
+	prevMoment = {"Today":"Today", "Tomorrow":"Today", "Week":"Tomorrow","Next Work Week":"Next Work Week", "Month":"Week", "3 Month":"Month", "6 Month":"3 Month", "Year":"6 Month", "3 Year":"Year"};
 	now = new Date().getTime();
 	now = now + (2-5)*60*60*1000; // make the day start at 5 AM, today. We need two extra hours for the timezone setting
 
