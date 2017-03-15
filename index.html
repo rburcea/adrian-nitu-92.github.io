@@ -6,6 +6,12 @@
 <!--  python -m http.server -->
 </head>
 <body>
+
+<div id="p1">Hello World!</div>
+
+<div id="percs" style="width: 480px; height: 400px;"></div>
+
+
 <script>
 
 counter = 0; // TODO: no global state please
@@ -80,18 +86,26 @@ function parseTasks(list){
 		card.tick = 0.125;
 		card.size = 0;
 		labelsToAdd = []
+		card.IfNeedBe = false;
 		for(i in labels){
 			tick = undefined;
 			label = labels[i];
 			ln = label.name;
 			if(ln == "MIT"){
 				card.size = card.size + 1000;
-			} else if(ln == "Morning"){
+			} else if (ln == "Morning"){
 				card.size = card.size +600;
-			} else if(ln == "Habbit"){
+			} else if (ln == "Habbit"){
 				card.size = card.size +500;
-			} else if(ln == "ImportantTask" || ln == "Work" || ln == "Interactive"){
+			} else if (ln == "Facultate"){
+				card.size = card.size +300;
+			} else if (ln == "Facultate-TA"){
+				card.size = card.size +200;
+			} else if (ln == "ImportantTask" || ln == "Work" || ln == "Interactive"){
 				card.size = card.size +100;
+			} else if (ln == "IfNeedBe"){
+				card.size = card.size -1200;
+				card.IfNeedBe = true;
 			} else {
 				tick = convert[label.name];
 				if(tick !== undefined){
@@ -153,6 +167,8 @@ asserts["sort"] = function(){
 					Trello.put('/cards/' + card.id + "/pos",{"value":"bottom"},
 						doOver, function(v){console.log(v);});
 					incrementator = incrementator +1;
+				} else {
+					window.location.reload();
 				}
 			}
 			doOver();
@@ -221,19 +237,21 @@ asserts["warning when tomorrow has a buffer task"] = function(){
 	return true;
 }
 
-function subsumate(list){
+function subsumate(list, addIfNeedBes){
 	cards = list.cards;
 	stopPoint = maxTicks = list.ticks;
 	if(list.name !== "Today")
 		stopPoint = 1.25 * maxTicks;
 	for(c in cards){
 		card = cards[c];
-		list.sumTicks = list.sumTicks + card.tick;
-		if( list.sumTicks > maxTicks){
-			globalWarning = globalWarning + "Seems you are kinda overbooked for <b>" + list.name + "</b>. You need to pull had to afford <b>"+ card.name + "</b><br\>";
-		}
 		if( list.sumTicks > stopPoint){
 			break;
+		}
+		if(addIfNeedBes || ! card.IfNeedBe){
+			list.sumTicks = list.sumTicks + card.tick;
+			if( list.sumTicks > maxTicks){
+				globalWarning = globalWarning + "Seems you are kinda overbooked for <b>" + list.name + "</b>. You need to pull hard to afford <b>"+ card.name + "</b><br\>";
+			}
 		}
 	}
 	if( list.sumTicks > stopPoint){
@@ -245,16 +263,18 @@ function subsumate(list){
 			if(flag){
 				card = cards[c];
 				globalError = globalError + "Start by dropping <b>"+ card.name + "</b><br\>";
-				list.sumTicks = list.sumTicks + card.tick;
+				if(addIfNeedBes || ! card.IfNeedBe){
+					list.sumTicks = list.sumTicks + card.tick;
+				}
 			}
 		}
-		console.log("" + list.name + " " + list.sumTicks  + "/" + list.ticks);
+		console.log("" + list.name + " with addIfNeedBes "+ addIfNeedBes + " " + list.sumTicks  + "/" + list.ticks);
 		return false;
 	}
-	if( list.sumTicks < maxTicks){
+	if( list.sumTicks < maxTicks ){
 		globalWarning = globalWarning + "Congrats, <b>" + list.name + "</b> looks good. You even have <b>" + (maxTicks - list.sumTicks).toFixed(2) + "</b> free hours<br\>";
 	}
-	console.log("" + list.name + " " + list.sumTicks  + "/" + list.ticks);
+	console.log("" + list.name + " with addIfNeedBes "+ addIfNeedBes + " " + list.sumTicks  + "/" + list.ticks);
 	return true;
 }
 
@@ -264,8 +284,17 @@ asserts["check sane @time"] = function(){
 	for(l in requiredLists){
 		name = requiredLists[l];
 		list = lists[name];
-		if(subsumate(list) == false)
-			return false;
+		bck = list.sumTicks;
+		bckw = globalWarning;
+		bcke = globalError;
+		if(subsumate(list, true) == false){
+			list.sumTicks = bck;
+			globalWarning = bckw + "I had to remove IfNeedBes for " + list.name + "!<br/>";
+			globalError = bcke;
+			if(subsumate(list, false) == false){
+				return false;
+			}
+		}
 		if(next[name] !== undefined){
 			lists[next[name]].sumTicks += list.sumTicks;
 			sumsCounts[next[name]]["Free"] -= list.sumTicks;
@@ -431,11 +460,6 @@ function every5(){
 base();
 </script>
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-
-<div id="p1">Hello World!</div>
-
-<div id="percs" style="width: 480px; height: 400px;"></div>
-
 
 </body>
 
