@@ -85,8 +85,7 @@ function parseTasks(list){
 		found = 0;
 		card.tick = 0.125;
 		card.size = 0;
-		labelsToAdd = []
-		card.IfNeedBe = false;
+		labelsToAdd = [];
 		for(i in labels){
 			tick = undefined;
 			label = labels[i];
@@ -103,9 +102,6 @@ function parseTasks(list){
 				card.size = card.size +200;
 			} else if (ln == "ImportantTask" || ln == "Work" || ln == "Interactive"){
 				card.size = card.size +100;
-			} else if (ln == "IfNeedBe"){
-				card.size = card.size -1200;
-				card.IfNeedBe = true;
 			} else {
 				tick = convert[label.name];
 				if(tick !== undefined){
@@ -177,6 +173,7 @@ asserts["sort"] = function(){
 	}
 	return true;
 }
+
 asserts["Test that today has a MIT task"] = function(){
 	console.log("Test that today has a MIT task");
 	cards = lists["Today"].cards;
@@ -201,6 +198,23 @@ asserts["Test that today has a MIT task"] = function(){
 	if(ret)
 		globalError = "";
 	return ret;
+}
+
+asserts["taskCount"] = function(){
+	console.log("Task Count");
+	for(l in requiredLists){
+		name = requiredLists[l];
+		list = lists[name];
+		cards = list.cards;
+		len = Object.keys(cards).length;
+		console.log("Counter:" + name + ":" + len);
+		if(len > 30){
+			globalError = "You must have no more than 30 cards for "+name+"! <br/>Fuck you<br/>";
+			return false;
+		}
+	}
+	return true;
+
 }
 asserts["Test that today has no buffer task"] = function(){
 	console.log("Test that today has no buffer task");
@@ -237,7 +251,8 @@ asserts["warning when tomorrow has a buffer task"] = function(){
 	return true;
 }
 
-function subsumate(list, addIfNeedBes){
+function subsumate(list){
+	addIfNeedBes = true;
 	cards = list.cards;
 	stopPoint = maxTicks = list.ticks;
 	if(list.name !== "Today")
@@ -288,12 +303,7 @@ asserts["check sane @time"] = function(){
 		bckw = globalWarning;
 		bcke = globalError;
 		if(subsumate(list, true) == false){
-			list.sumTicks = bck;
-			globalWarning = bckw + "I had to remove IfNeedBes for " + list.name + "!<br/>";
-			globalError = bcke;
-			if(subsumate(list, false) == false){
-				return false;
-			}
+			return false;
 		}
 		if(next[name] !== undefined){
 			lists[next[name]].sumTicks += list.sumTicks;
@@ -445,7 +455,7 @@ function every5(){
 	baseDay = 12;
 
 	lists["Today"] = {"start":yesterStart, "end":tomorrowStart,"ticks":(29 - currentHour)%24};
-	lists["Tomorrow"] = {"start":tomorrowStart, "end":tomorrowEnd,"ticks":(29 - currentHour)%24 +baseDay};
+	lists["Tomorrow"] = {"start":tomorrowStart, "end":tomorrowEnd,"ticks":baseDay};
 	lists["Week"] = {"start":tomorrowEnd, "end":weekEnd,"ticks":baseDay * 8 - baseDay/2};
 	lists["Next Work Week"] = {"start":0, "end":monthEnd,"ticks":40};
 	lists["Month"] = {"start":weekEnd, "end":monthEnd,"ticks":lists["Week"].ticks * 4 - lists["Week"].ticks/2};
