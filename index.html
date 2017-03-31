@@ -137,10 +137,10 @@ function parseTasks(list){
 }
 asserts["sort"] = function(){
 	console.log("sort");
-	reqList = ["Inbox"].concat(requiredLists);
+	ssreqList = ["One Day"].concat(requiredLists);
 	globalWarning = globalError = "";
-	for(l in reqList){
-		name = reqList[l];
+	for(l in ssreqList){
+		name = ssreqList[l];
 		list = lists[name];
 		cards = list.cards;
 		arrayCards = Object.keys(cards).map(function (key) { return cards[key]; });
@@ -148,7 +148,9 @@ asserts["sort"] = function(){
 		arraySortedByPos.sort(function(a,b){return a.pos - b.pos;});
 		arraySortedBySize = arrayCards.slice(0);
 		arraySortedBySize.sort(function(a,b){if(a.size == b.size) return new Date(a.due).getTime() - new Date(b.due).getTime(); return b.size - a.size;});
-		if((arraySortedByPos.map(function(el){return el.size;}).toString()) != (arraySortedBySize.map(function(el){return el.size;}).toString())){
+		s1 = arraySortedByPos.map(function(el){return el.size;}).toString();
+		s2 = arraySortedBySize.map(function(el){return el.size;}).toString();
+		if( s1 != s2){
 			console.log(name + " is not sorted!");
 			incrementator = 0;
 			var doOver = function(){
@@ -202,12 +204,15 @@ asserts["Test that today has a MIT task"] = function(){
 
 asserts["taskCount"] = function(){
 	console.log("Task Count");
-	for(l in requiredLists){
-		name = requiredLists[l];
+	xxx = ["Inbox", "Tomorrow", "Today"];
+	for(l in xxx){
+		name = xxx[l];
 		list = lists[name];
 		cards = list.cards;
 		len = Object.keys(cards).length;
-		console.log("Counter:" + name + ":" + len);
+		if(name === "Inbox" && len != 0){
+			globalWarning = globalWarning + "Please schedule the inbox!<br/>";
+		}
 		if(len > 30){
 			globalError = "You must have no more than 30 cards for "+name+"! <br/>Fuck you<br/>";
 			return false;
@@ -295,7 +300,7 @@ function subsumate(list){
 
 asserts["check sane @time"] = function(){
 	console.log("check sane @time");
-	next = {"Today":"Tomorrow", "Tomorrow":"Week", "Next Work Week":"Week", "Week":"Month", "Month":"3 Month", "3 Month":"6 Month", "6 Month":"Year", "Year":"3 Year"};
+	next = {"Today":"Week", "Tomorrow":"Week", "Next Work Week":"Week", "Week":"Month", "Month":"3 Month", "3 Month":"6 Month", "6 Month":"Year", "Year":"3 Year"};
 	for(l in requiredLists){
 		name = requiredLists[l];
 		list = lists[name];
@@ -343,15 +348,24 @@ var done = function(){
 				return;
 			}
 		}
+
+		console.log(sumsCounts);
+		console.log("Work THIS week = " + (sumsCounts["Week"]["Work"] -
+			sumsCounts["Next Work Week"]["Work"] + sumsCounts["Tomorrow"]["Work"]));
 //---------------------------
-myReqlist = reqList.slice(0);
-myReqlist.splice(3,1);
+myReqlist = requiredLists.slice(0);
+myReqlist.pop();
 data = [];
 console.log(types);
+console.log(myReqlist);
+var pul = function (a, type) {
+	return 100* sumsCounts[a][type] / lists[a].ticks;
+}
+types = new Set(["Free"]); // fuck the others
 for(let type of types){
 	var Percs = {
 	  x: myReqlist,
-	  y: myReqlist.map(a => 100* sumsCounts[a][type] / lists[a].ticks),
+	  y: myReqlist.map(a => pul(a, type)),
 	  mode: 'lines+markers',
 	  name: type,
 	  line: {shape: 'hvh'},
@@ -368,9 +382,6 @@ var layout = {
 console.log(data);
 Plotly.newPlot('percs', data, layout);
 //-----------------------------
-		console.log(sumsCounts);
-		console.log("Work THIS week = " + (sumsCounts["Week"]["Work"] -
-			sumsCounts["Next Work Week"]["Work"] + sumsCounts["Tomorrow"]["Work"]));
 	}
 	document.getElementById("p1").innerHTML = document.getElementById("p1").innerHTML + globalWarning;
 	globalWarning = "";
@@ -390,7 +401,6 @@ var populateLists = function(){
 			done();
 		};
 	};
-
 	for(listName in lists){
 		listID = lists[listName].id;
 		Trello.get('/lists/'+ listID +'/cards', curry(listName), error);
@@ -416,8 +426,8 @@ function base(){
 
 	dayLenghtInMs = (1000 * 60 * 60 * 24);
 	weekLengthInMs = (dayLenghtInMs * 7);
-	requiredLists = ["Today", "Tomorrow", "Next Work Week", "Week", "Month", "3 Month", "6 Month", "Year", "3 Year", "Inbox"];
-	prevMoment = {"Today":"Today", "Tomorrow":"Today", "Week":"Tomorrow","Next Work Week":"Next Work Week", "Month":"Week", "3 Month":"Month", "6 Month":"3 Month", "Year":"6 Month", "3 Year":"Year"};
+	requiredLists = ["Today", "Tomorrow", "Next Work Week", "Week", "Month", "3 Month", "6 Month", "Year", "3 Year", "Inbox", "One Day"];
+	prevMoment = {"Today":"Today", "Tomorrow":"Today", "Week":"Tomorrow","Next Work Week":"Next Work Week", "Month":"Week", "3 Month":"Month", "6 Month":"3 Month", "Year":"6 Month", "3 Year":"Year", "One Day":"One Day"};
 
 	Trello.authorize({
 	  type: 'popup',
@@ -454,7 +464,7 @@ function every5(){
 
 	baseDay = 12;
 
-	lists["Today"] = {"start":yesterStart, "end":tomorrowStart,"ticks":(29 - currentHour)%24};
+	lists["Today"] = {"start":yesterStart, "end":tomorrowStart,"ticks":23 - currentHour};
 	lists["Tomorrow"] = {"start":tomorrowStart, "end":tomorrowEnd,"ticks":baseDay};
 	lists["Week"] = {"start":tomorrowEnd, "end":weekEnd,"ticks":baseDay * 8 - baseDay/2};
 	lists["Next Work Week"] = {"start":0, "end":monthEnd,"ticks":40};
@@ -463,8 +473,8 @@ function every5(){
 	lists["6 Month"] = {"start":_3monthEnd, "end":_6monthEnd,"ticks":lists["3 Month"].ticks * 2 - lists["Week"].ticks/2};
 	lists["Year"] = {"start":_6monthEnd, "end":yearEnd,"ticks":lists["6 Month"].ticks * 2 - lists["Week"].ticks/2};
 	lists["3 Year"] = {"start":yearEnd, "end":_3yearEnd,"ticks":lists["Year"].ticks * 3 - lists["Week"].ticks/2};
+	lists["One Day"] = {"start":0, "end":Number.MAX_SAFE_INTEGER,"ticks":Number.MAX_SAFE_INTEGER};
 	boardSelect(gItemID);
-//	setInterval(every5, 1000*60*5);
 	setInterval(function() {window.location.reload();}, 1000*60*5);
 }
 base();
