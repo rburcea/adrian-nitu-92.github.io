@@ -204,16 +204,15 @@ asserts["Test that today has a MIT task"] = function(){
 
 asserts["taskCount"] = function(){
 	console.log("Task Count");
-	xxx = ["Inbox", "Tomorrow", "Today"];
-	for(l in xxx){
-		name = xxx[l];
+	for(l in requiredLists){
+		name = requiredLists[l];
 		list = lists[name];
 		cards = list.cards;
 		len = Object.keys(cards).length;
 		if(name === "Inbox" && len != 0){
 			globalWarning = globalWarning + "Please schedule the inbox!<br/>";
 		}
-		if(len > 30){
+		if(name !== "One Day" && len > 30){
 			globalError = "You must have no more than 30 cards for "+name+"! <br/>Fuck you<br/>";
 			return false;
 		}
@@ -300,7 +299,7 @@ function subsumate(list){
 
 asserts["check sane @time"] = function(){
 	console.log("check sane @time");
-	next = {"Today":"Week", "Tomorrow":"Week", "Next Work Week":"Week", "Week":"Month", "Month":"3 Month", "3 Month":"6 Month", "6 Month":"Year", "Year":"3 Year"};
+	next = {"Today":"Week", "Tomorrow":"Week", "Next Work Week":"Week", "Work Week":"Week", "Week":"Month", "Month":"3 Month", "3 Month":"6 Month", "6 Month":"Year", "Year":"3 Year"};
 	for(l in requiredLists){
 		name = requiredLists[l];
 		list = lists[name];
@@ -425,8 +424,8 @@ function base(){
 
 	dayLenghtInMs = (1000 * 60 * 60 * 24);
 	weekLengthInMs = (dayLenghtInMs * 7);
-	requiredLists = ["Today", "Tomorrow", "Next Work Week", "Week", "Month", "3 Month", "6 Month", "Year", "3 Year", "Inbox", "One Day"];
-	prevMoment = {"Today":"Today", "Tomorrow":"Today", "Week":"Tomorrow","Next Work Week":"Next Work Week", "Month":"Week", "3 Month":"Month", "6 Month":"3 Month", "Year":"6 Month", "3 Year":"Year", "One Day":"One Day"};
+	requiredLists = ["Today", "Tomorrow", "Next Work Week", "Work Week", "Week", "Month", "3 Month", "6 Month", "Year", "3 Year", "Inbox", "One Day"];
+	prevMoment = {"Today":"Today", "Tomorrow":"Today", "Week":"Tomorrow", "Work Week":"Tomorrow", "Next Work Week":"Next Work Week", "Month":"Week", "3 Month":"Month", "6 Month":"3 Month", "Year":"6 Month", "3 Year":"Year", "One Day":"One Day"};
 
 	Trello.authorize({
 	  type: 'popup',
@@ -450,7 +449,10 @@ function every5(){
 
 	todayStart = now - now % dayLenghtInMs;
 
-	currentHour = ((new Date().getTime()) - todayStart + 2*60*60*1000) / (1000 * 60 * 60);
+	currentHour = ((new Date().getTime()) - todayStart + 3*60*60*1000) / (1000 * 60 * 60);
+	if(currentHour > 24){
+		currentHour -= 24;
+	}
 	yesterStart = todayStart - dayLenghtInMs;
 	tomorrowStart = todayStart + dayLenghtInMs;
 	tomorrowEnd = tomorrowStart + dayLenghtInMs;
@@ -466,6 +468,7 @@ function every5(){
 	lists["Today"] = {"start":yesterStart, "end":tomorrowStart,"ticks":23 - currentHour};
 	lists["Tomorrow"] = {"start":tomorrowStart, "end":tomorrowEnd,"ticks":baseDay};
 	lists["Week"] = {"start":tomorrowEnd, "end":weekEnd,"ticks":baseDay * 8 - baseDay/2};
+	lists["Work Week"] = {"start":tomorrowEnd, "end":weekEnd,"ticks":40};
 	lists["Next Work Week"] = {"start":0, "end":monthEnd,"ticks":40};
 	lists["Month"] = {"start":weekEnd, "end":monthEnd,"ticks":lists["Week"].ticks * 4 - lists["Week"].ticks/2};
 	lists["3 Month"] = {"start":monthEnd, "end":_3monthEnd,"ticks":lists["Month"].ticks * 3 - lists["Week"].ticks/2};
