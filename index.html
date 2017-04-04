@@ -353,8 +353,7 @@ var done = function(){
 		console.log("Work THIS week = " + (sumsCounts["Week"]["Work"] -
 			sumsCounts["Next Work Week"]["Work"] + sumsCounts["Tomorrow"]["Work"]));
 //---------------------------
-myReqlist = requiredLists.slice(0);
-myReqlist.pop();
+myReqlist = requiredLists.slice(0,2).concat(requiredLists.slice(3, -2));
 data = [];
 console.log(types);
 console.log(myReqlist);
