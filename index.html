@@ -330,6 +330,10 @@ var done = function(){
 			if(name === "Inbox"){
 				sumCount = {};
 			}
+			if(name === "Work Week"){
+				lists[name].ticks -= sumsCounts["Today"]["Work"];
+				lists[name].ticks -= sumsCounts["Tomorrow"]["Work"];
+			}
 			sumCount["Free"] = lists[name].ticks;
 			sumCount["Unlabeled"] = 0;
 			if(! parseTasks(lists[name])){
