@@ -299,7 +299,7 @@ function subsumate(list){
 
 asserts["check sane @time"] = function(){
 	console.log("check sane @time");
-	next = {"Today":"Week", "Tomorrow":"Week", "Next Work Week":"Week", "Work Week":"Week", "Week":"Month", "Month":"3 Month", "3 Month":"6 Month", "6 Month":"Year", "Year":"3 Year"};
+	next = {"Today":"Week", "Tomorrow":"Week", "Work Week":"Week", "Week":"Month", "Month":"3 Month", "3 Month":"6 Month", "6 Month":"Year", "Year":"3 Year"};
 	for(l in requiredLists){
 		name = requiredLists[l];
 		list = lists[name];
@@ -353,8 +353,6 @@ var done = function(){
 		}
 
 		console.log(sumsCounts);
-		console.log("Work THIS week = " + (sumsCounts["Week"]["Work"] -
-			sumsCounts["Next Work Week"]["Work"] + sumsCounts["Tomorrow"]["Work"]));
 //---------------------------
 myReqlist = requiredLists.slice(0,2).concat(requiredLists.slice(3, -2));
 data = [];
@@ -403,6 +401,7 @@ var populateLists = function(){
 			done();
 		};
 	};
+	console.log(lists);
 	for(listName in lists){
 		listID = lists[listName].id;
 		Trello.get('/lists/'+ listID +'/cards', curry(listName), error);
@@ -414,8 +413,10 @@ var boardSelect = function(boardID){
 		document.getElementById("p1").innerHTML = "";
 		for(i in answer){
 			list = answer[i];
+
 			list.backlink = list;
 			Object.assign(list, lists[list.name]);
+
 			lists[list.name] = list;
 		}
 		populateLists();
@@ -428,7 +429,7 @@ function base(){
 
 	dayLenghtInMs = (1000 * 60 * 60 * 24);
 	weekLengthInMs = (dayLenghtInMs * 7);
-	requiredLists = ["Today", "Tomorrow", "Next Work Week", "Work Week", "Week", "Month", "3 Month", "6 Month", "Year", "3 Year", "Inbox", "One Day"];
+	requiredLists = ["Today", "Tomorrow", "Work Week", "Week", "Month", "3 Month", "6 Month", "Year", "3 Year", "Inbox", "One Day"];
 	prevMoment = {"Today":"Today", "Tomorrow":"Today", "Week":"Tomorrow", "Work Week":"Tomorrow", "Next Work Week":"Next Work Week", "Month":"Week", "3 Month":"Month", "6 Month":"3 Month", "Year":"6 Month", "3 Year":"Year", "One Day":"One Day"};
 
 	Trello.authorize({
@@ -467,13 +468,13 @@ function every5(){
 	yearEnd = todayStart + 12 * 31 * dayLenghtInMs;
 	_3yearEnd = todayStart + 3 * 12 * 31 * dayLenghtInMs;
 
-	baseDay = 14;
+	baseDay = 12;
+	maxDay = baseDay * 1.25;
 
 	lists["Today"] = {"start":yesterStart, "end":tomorrowStart,"ticks":24 - currentHour};
 	lists["Tomorrow"] = {"start":tomorrowStart, "end":tomorrowEnd,"ticks":baseDay};
 	lists["Week"] = {"start":tomorrowEnd, "end":weekEnd,"ticks":baseDay * 8 - baseDay/2};
 	lists["Work Week"] = {"start":tomorrowEnd, "end":weekEnd,"ticks":40};
-	lists["Next Work Week"] = {"start":0, "end":monthEnd,"ticks":40};
 	lists["Month"] = {"start":weekEnd, "end":monthEnd,"ticks":lists["Week"].ticks * 4 - lists["Week"].ticks/2};
 	lists["3 Month"] = {"start":monthEnd, "end":_3monthEnd,"ticks":lists["Month"].ticks * 3 - lists["Week"].ticks/2};
 	lists["6 Month"] = {"start":_3monthEnd, "end":_6monthEnd,"ticks":lists["3 Month"].ticks * 2 - lists["Week"].ticks/2};
