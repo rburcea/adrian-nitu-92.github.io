@@ -202,24 +202,6 @@ asserts["Test that today has a MIT task"] = function(){
 	return ret;
 }
 
-asserts["taskCount"] = function(){
-	console.log("Task Count");
-	for(l in requiredLists){
-		name = requiredLists[l];
-		list = lists[name];
-		cards = list.cards;
-		len = Object.keys(cards).length;
-		if(name === "Inbox" && len != 0){
-			globalWarning = globalWarning + "Please schedule the inbox!<br/>";
-		}
-		if(name !== "One Day" && len > 35){
-			globalError = "You must have no more than 35 cards for "+name+"! <br/>Fuck you<br/>";
-			return false;
-		}
-	}
-	return true;
-
-}
 asserts["Test that today has no buffer task"] = function(){
 	console.log("Test that today has no buffer task");
 	cards = lists["Today"].cards;
