@@ -212,8 +212,8 @@ asserts["taskCount"] = function(){
 		if(name === "Inbox" && len != 0){
 			globalWarning = globalWarning + "Please schedule the inbox!<br/>";
 		}
-		if(name !== "One Day" && len > 30){
-			globalError = "You must have no more than 30 cards for "+name+"! <br/>Fuck you<br/>";
+		if(name !== "One Day" && len > 35){
+			globalError = "You must have no more than 35 cards for "+name+"! <br/>Fuck you<br/>";
 			return false;
 		}
 	}
@@ -467,7 +467,7 @@ function every5(){
 	yearEnd = todayStart + 12 * 31 * dayLenghtInMs;
 	_3yearEnd = todayStart + 3 * 12 * 31 * dayLenghtInMs;
 
-	baseDay = 12;
+	baseDay = 14;
 
 	lists["Today"] = {"start":yesterStart, "end":tomorrowStart,"ticks":24 - currentHour};
 	lists["Tomorrow"] = {"start":tomorrowStart, "end":tomorrowEnd,"ticks":baseDay};
