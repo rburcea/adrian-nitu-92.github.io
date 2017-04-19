@@ -42,6 +42,35 @@ asserts["Check lists with no time req"] = function(lists){
 	console.log("passed!");
 	return true;
 }
+
+todayHasCheckpoint = false;
+
+var reasign_card_to_proper_list_considering_checkpoint = function(tomorrowList){
+	if(todayHasCheckpoint){
+		console.log("todayHasCheckpoint");
+		return;
+	}
+	cards = tomorrowList.cards;
+	arrayCards = Object.keys(cards).map(function (key) { return cards[key]; });
+	arraySortedByDate = arrayCards.slice(0);
+	arraySortedByDate.sort(function(a,b){return new Date(a.due).getTime() - new Date(b.due).getTime();});
+	for(c in arraySortedByDate){
+		card = arraySortedByDate[c];
+		labels = card.labels;
+		for(i in labels){
+			label = labels[i];
+			ln = label.name;
+			if (ln === "Checkpoint"){
+				todayHasCheckpoint = true;
+			}
+		}
+		Trello.put('/cards/' + card.id + "/idList",{"value":lists["Today"].id}, function(v){console.log(v);}, function(v){console.log(v);});
+		if(todayHasCheckpoint){
+			break;
+		}
+	}
+}
+
 var reasign_card_to_proper_list = function(l, start, end, name){
 	prevListName = prevMoment[name];
 	prevList = lists[prevListName];
@@ -62,15 +91,6 @@ var reasign_card_to_proper_list = function(l, start, end, name){
 		if(due > end){
 			globalWarning = globalWarning + "Card " + card.name + ": " + card.url + " is not dated correctly. It is scheduled for <b>" +name+ "</b>, but it can be completed later.<br/>";
 		}
-	}
-	return true;
-}
-
-asserts["check * for date. want everything that is in today to be moved to today, or to be moved to inbox?"] = function(){
-	console.log("check * for date. want everything that is in today to be moved to today, or to be moved to inbox?");
-	for(l in requiredLists){
-		name = requiredLists[l];
-		reasign_card_to_proper_list(lists[name], lists[name].start, lists[name].end, name);
 	}
 	return true;
 }
@@ -102,7 +122,9 @@ function parseTasks(list){
 				card.size = card.size +200;
 			} else if (ln == "ImportantTask" || ln == "Work" || ln == "Interactive"){
 				card.size = card.size +100;
-			} else {
+			} else if (ln == "Checkpoint" && list.name == "Today"){
+				todayHasCheckpoint = true;
+			}else {
 				tick = convert[label.name];
 				if(tick !== undefined){
 					found = found + 1;
@@ -171,6 +193,20 @@ asserts["sort"] = function(){
 			}
 			doOver();
 			return true;
+		}
+	}
+	return true;
+}
+
+
+asserts["check * for date. want everything that is in today to be moved to today, or to be moved to inbox?"] = function(){
+	console.log("check * for date. want everything that is in today to be moved to today, or to be moved to inbox?");
+	for(l in requiredLists){
+		name = requiredLists[l];
+		if(name == "Tomorrow"){
+			reasign_card_to_proper_list_considering_checkpoint(lists["Tomorrow"]);
+		} else {
+			reasign_card_to_proper_list(lists[name], lists[name].start, lists[name].end, name);
 		}
 	}
 	return true;
