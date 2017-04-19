@@ -281,7 +281,7 @@ function subsumate(list){
 
 asserts["check sane @time"] = function(){
 	console.log("check sane @time");
-	next = {"Today":"Week", "Tomorrow":"Week", "Work Week":"Week", "Week":"Month", "Month":"3 Month", "3 Month":"6 Month", "6 Month":"Year", "Year":"3 Year"};
+	next = {"Today":"Week", "Tomorrow":"Week", "Week":"Month", "Month":"3 Month", "3 Month":"6 Month", "6 Month":"Year", "Year":"3 Year"};
 	for(l in requiredLists){
 		name = requiredLists[l];
 		list = lists[name];
@@ -312,10 +312,6 @@ var done = function(){
 			if(name === "Inbox"){
 				sumCount = {};
 			}
-			if(name === "Work Week"){
-				lists[name].ticks -= sumsCounts["Today"]["Work"];
-				lists[name].ticks -= sumsCounts["Tomorrow"]["Work"];
-			}
 			sumCount["Free"] = lists[name].ticks;
 			sumCount["Unlabeled"] = 0;
 			if(! parseTasks(lists[name])){
@@ -343,7 +339,7 @@ console.log(myReqlist);
 var pul = function (a, type) {
 	return 100* sumsCounts[a][type] / lists[a].ticks;
 }
-types = new Set(["Free"]); // fuck the others
+types = new Set(["Free", "Work"]); // fuck the others
 for(let type of types){
 	var Percs = {
 	  x: myReqlist,
@@ -411,8 +407,8 @@ function base(){
 
 	dayLenghtInMs = (1000 * 60 * 60 * 24);
 	weekLengthInMs = (dayLenghtInMs * 7);
-	requiredLists = ["Today", "Tomorrow", "Work Week", "Week", "Month", "3 Month", "6 Month", "Year", "3 Year", "Inbox", "One Day"];
-	prevMoment = {"Today":"Today", "Tomorrow":"Today", "Week":"Tomorrow", "Work Week":"Tomorrow", "Next Work Week":"Next Work Week", "Month":"Week", "3 Month":"Month", "6 Month":"3 Month", "Year":"6 Month", "3 Year":"Year", "One Day":"One Day"};
+	requiredLists = ["Today", "Tomorrow", "Week", "Month", "3 Month", "6 Month", "Year", "3 Year", "Inbox", "One Day"];
+	prevMoment = {"Today":"Today", "Tomorrow":"Today", "Week":"Tomorrow", "Month":"Week", "3 Month":"Month", "6 Month":"3 Month", "Year":"6 Month", "3 Year":"Year", "One Day":"One Day"};
 
 	Trello.authorize({
 	  type: 'popup',
@@ -456,7 +452,6 @@ function every5(){
 	lists["Today"] = {"start":yesterStart, "end":tomorrowStart,"ticks":24 - currentHour};
 	lists["Tomorrow"] = {"start":tomorrowStart, "end":tomorrowEnd,"ticks":baseDay};
 	lists["Week"] = {"start":tomorrowEnd, "end":weekEnd,"ticks":baseDay * 8 - baseDay/2};
-	lists["Work Week"] = {"start":tomorrowEnd, "end":weekEnd,"ticks":40};
 	lists["Month"] = {"start":weekEnd, "end":monthEnd,"ticks":lists["Week"].ticks * 4 - lists["Week"].ticks/2};
 	lists["3 Month"] = {"start":monthEnd, "end":_3monthEnd,"ticks":lists["Month"].ticks * 3 - lists["Week"].ticks/2};
 	lists["6 Month"] = {"start":_3monthEnd, "end":_6monthEnd,"ticks":lists["3 Month"].ticks * 2 - lists["Week"].ticks/2};
