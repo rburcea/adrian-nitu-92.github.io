@@ -214,7 +214,10 @@ asserts["check * for date. want everything that is in today to be moved to today
 
 asserts["Test that today has a MIT task"] = function(){
 	console.log("Test that today has a MIT task");
-	cards = lists["Today"].cards;
+	cards = lists["Now"].cards;
+	cards = JSON.parse(JSON.stringify(cards));
+	Object.assign(cards, lists["Today"].cards);
+	console.log(cards);
 	ret = false;
 	globalError = "You must have at least one MIT card for today! <br/>";
 	for(c in cards){
