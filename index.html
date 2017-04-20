@@ -43,11 +43,11 @@ asserts["Check lists with no time req"] = function(lists){
 	return true;
 }
 
-todayHasCheckpoint = false;
+nowHasCheckpoint = false;
 
 var reasign_card_to_proper_list_considering_checkpoint = function(tomorrowList){
-	if(todayHasCheckpoint){
-		console.log("todayHasCheckpoint");
+	if(nowHasCheckpoint){
+		console.log("nowHasCheckpoint");
 		return;
 	}
 	cards = tomorrowList.cards;
@@ -61,11 +61,11 @@ var reasign_card_to_proper_list_considering_checkpoint = function(tomorrowList){
 			label = labels[i];
 			ln = label.name;
 			if (ln === "Checkpoint"){
-				todayHasCheckpoint = true;
+				nowHasCheckpoint = true;
 			}
 		}
-		Trello.put('/cards/' + card.id + "/idList",{"value":lists["Today"].id}, function(v){console.log(v);}, function(v){console.log(v);});
-		if(todayHasCheckpoint){
+		Trello.put('/cards/' + card.id + "/idList",{"value":lists["Now"].id}, function(v){console.log(v);}, function(v){console.log(v);});
+		if(nowHasCheckpoint){
 			break;
 		}
 	}
@@ -122,8 +122,8 @@ function parseTasks(list){
 				card.size = card.size +200;
 			} else if (ln == "ImportantTask" || ln == "Work" || ln == "Interactive"){
 				card.size = card.size +100;
-			} else if (ln == "Checkpoint" && list.name == "Today"){
-				todayHasCheckpoint = true;
+			} else if (ln == "Checkpoint" && list.name == "Now"){
+				nowHasCheckpoint = true;
 			}else {
 				tick = convert[label.name];
 				if(tick !== undefined){
@@ -203,8 +203,8 @@ asserts["check * for date. want everything that is in today to be moved to today
 	console.log("check * for date. want everything that is in today to be moved to today, or to be moved to inbox?");
 	for(l in requiredLists){
 		name = requiredLists[l];
-		if(name == "Tomorrow"){
-			reasign_card_to_proper_list_considering_checkpoint(lists["Tomorrow"]);
+		if(name == "Today"){
+			reasign_card_to_proper_list_considering_checkpoint(lists["Today"]);
 		} else {
 			reasign_card_to_proper_list(lists[name], lists[name].start, lists[name].end, name);
 		}
@@ -317,7 +317,7 @@ function subsumate(list){
 
 asserts["check sane @time"] = function(){
 	console.log("check sane @time");
-	next = {"Today":"Week", "Tomorrow":"Week", "Week":"Month", "Month":"3 Month", "3 Month":"6 Month", "6 Month":"Year", "Year":"3 Year"};
+	next = {"Now":"Today", "Today":"Week", "Tomorrow":"Week", "Week":"Month", "Month":"3 Month", "3 Month":"6 Month", "6 Month":"Year", "Year":"3 Year"};
 	for(l in requiredLists){
 		name = requiredLists[l];
 		list = lists[name];
@@ -443,8 +443,8 @@ function base(){
 
 	dayLenghtInMs = (1000 * 60 * 60 * 24);
 	weekLengthInMs = (dayLenghtInMs * 7);
-	requiredLists = ["Today", "Tomorrow", "Week", "Month", "3 Month", "6 Month", "Year", "3 Year", "Inbox", "One Day"];
-	prevMoment = {"Today":"Today", "Tomorrow":"Today", "Week":"Tomorrow", "Month":"Week", "3 Month":"Month", "6 Month":"3 Month", "Year":"6 Month", "3 Year":"Year", "One Day":"One Day"};
+	requiredLists = ["Now", "Today", "Tomorrow", "Week", "Month", "3 Month", "6 Month", "Year", "3 Year", "Inbox", "One Day"];
+	prevMoment = {"Now":"Now", "Today":"Now", "Tomorrow":"Today", "Week":"Tomorrow", "Month":"Week", "3 Month":"Month", "6 Month":"3 Month", "Year":"6 Month", "3 Year":"Year", "One Day":"One Day"};
 
 	Trello.authorize({
 	  type: 'popup',
@@ -485,6 +485,7 @@ function every5(){
 	baseDay = 12;
 	maxDay = baseDay * 1.25;
 
+	lists["Now"] = {"start":yesterStart, "end":tomorrowStart,"ticks":24 - currentHour};
 	lists["Today"] = {"start":yesterStart, "end":tomorrowStart,"ticks":24 - currentHour};
 	lists["Tomorrow"] = {"start":tomorrowStart, "end":tomorrowEnd,"ticks":baseDay};
 	lists["Week"] = {"start":tomorrowEnd, "end":weekEnd,"ticks":baseDay * 8 - baseDay/2};
