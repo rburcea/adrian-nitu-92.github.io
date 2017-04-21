@@ -217,9 +217,7 @@ asserts["Test that today has a MIT task"] = function(){
 	cards = lists["Now"].cards;
 	cards = JSON.parse(JSON.stringify(cards));
 	Object.assign(cards, lists["Today"].cards);
-	console.log(cards);
-	ret = false;
-	globalError = "You must have at least one MIT card for today! <br/>";
+	count = 0;
 	for(c in cards){
 		card = cards[c];
 		labels = card.labels;
@@ -227,18 +225,19 @@ asserts["Test that today has a MIT task"] = function(){
 			label = labels[i];
 			ln = label.name;
 			if(ln === "MIT"){
-				if(ret){
-					globalError = "You must have just ONE MIT card for today! <br/>";
+				count = count +1;
+				if(count > 3){
+					globalError = "You must have at most 3 MIT card for today! <br/>";
 					return false;
 				}
-				ret = true;
-				MITcard = card;
 			}
 		}
 	}
-	if(ret)
-		globalError = "";
-	return ret;
+	if(count == 0){
+		globalError = "You must have at least one MIT card for today! <br/>";
+		return false;
+	}
+	return true;
 }
 
 asserts["Test that today has no buffer task"] = function(){
