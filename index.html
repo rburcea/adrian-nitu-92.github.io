@@ -204,7 +204,7 @@ asserts["check * for date. want everything that is in today to be moved to today
 	for(l in requiredLists){
 		name = requiredLists[l];
 		if(name == "Today"){
-			reasign_card_to_proper_list_considering_checkpoint(lists["Today"]);
+			reasign_card_to_proper_list_considering_checkpoint(lists[name]);
 		} else {
 			reasign_card_to_proper_list(lists[name], lists[name].start, lists[name].end, name);
 		}
@@ -451,7 +451,7 @@ function every5(){
 	moved = false;
 	lists = {}
 	now = new Date().getTime();
-	now = now + (2-5)*60*60*1000; // make the day start at 5 AM, today. We need two extra hours for the timezone setting
+	now = now + (2+2)*60*60*1000; // make the day start at 10 PM, yesterday. We need two extra hours for the timezone setting
 
 	todayStart = now - now % dayLenghtInMs;
 
