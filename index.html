@@ -472,8 +472,8 @@ function every5(){
 	baseDay = 10;
 
 	lists["Now"] = {"start":yesterStart, "end":tomorrowStart,"ticks":24 - currentHour};
-	lists["Today"] = {"start":yesterStart, "end":tomorrowStart,"ticks":16};
-	lists["Tomorrow"] = {"start":tomorrowStart, "end":tomorrowEnd,"ticks":baseDay};
+	lists["Today"] = {"start":yesterStart, "end":tomorrowStart,"ticks":24 - currentHour};
+	lists["Tomorrow"] = {"start":tomorrowStart, "end":tomorrowEnd,"ticks":16};
 	lists["Week"] = {"start":tomorrowEnd, "end":weekEnd,"ticks":baseDay * 8 - baseDay/2};
 	lists["Month"] = {"start":weekEnd, "end":monthEnd,"ticks":lists["Week"].ticks * 4 - baseDay/2};
 	lists["3 Month"] = {"start":monthEnd, "end":_3monthEnd,"ticks":lists["Month"].ticks * 3 - baseDay/2};
