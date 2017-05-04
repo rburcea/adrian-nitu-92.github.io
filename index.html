@@ -62,6 +62,7 @@ var reasign_card_to_proper_list_considering_checkpoint = function(tomorrowList){
 			ln = label.name;
 			if (ln === "Checkpoint"){
 				nowHasCheckpoint = true;
+				lists["Now"].end = new Date(card.due).getTime();
 			}
 		}
 		Trello.put('/cards/' + card.id + "/idList",{"value":lists["Now"].id}, function(v){console.log(v);}, function(v){console.log(v);});
