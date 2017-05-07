@@ -412,6 +412,7 @@ var populateLists = function(){
 
 var boardSelect = function(boardID){
 	var success = function(answer) {
+return;
 		document.getElementById("p1").innerHTML = "";
 		for(i in answer){
 			list = answer[i];
@@ -424,8 +425,9 @@ var boardSelect = function(boardID){
 		populateLists();
 	};
 
-	Trello.get('/boards/51d3f043a536c77a09000a40/lists', success, error);
-}
+//Trello.get('/boards/51d3f043a536c77a09000a40/lists', success, error);
+
+Trello.get('/member/me/boards', function(data){ console.log(data);}, error);}
 
 function base(){
 
